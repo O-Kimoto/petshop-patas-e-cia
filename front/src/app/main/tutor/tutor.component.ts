@@ -164,6 +164,12 @@ export class TutorComponent implements OnInit {
     }
 
     // Abre a tela de pets já filtrada por este tutor - [Otávio Michels]
+    // Link do WhatsApp do tutor (wa.me com o DDI 55); sem telefone válido, o botão não aparece - [Apolo Lins]
+    linkWhatsApp(telefone?: string): string | null {
+        const digitos = (telefone || '').replace(/\D/g, '');
+        return digitos.length >= 10 ? `https://wa.me/55${digitos}` : null;
+    }
+
     verPets(tutor: Tutor) {
         this.router.navigate(['/pets'], { queryParams: { tutor: tutor.id } });
     }

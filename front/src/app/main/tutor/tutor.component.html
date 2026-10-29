@@ -55,6 +55,10 @@
                         <td>
                             <span class="p-column-title">Ações</span>
                             <div class="flex md:justify-content-end gap-2">
+                                <!-- Abre a conversa com o tutor no WhatsApp, numa aba nova - [Apolo Lins] -->
+                                <a *ngIf="linkWhatsApp(tutor.telefone) as link" pButton pRipple icon="pi pi-whatsapp"
+                                    class="p-button-rounded p-button-outlined p-button-success" pTooltip="Conversar no WhatsApp"
+                                    [href]="link" target="_blank" rel="noopener"></a>
                                 <button pButton pRipple icon="pi pi-pencil" class="p-button-rounded p-button-success"
                                     pTooltip="Editar" (click)="editar(tutor)"></button>
                                 <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-warning"
