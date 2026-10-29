@@ -15,7 +15,7 @@ const SELECT_AGENDAMENTO = `
 `
 
 // Lista agendamentos, com filtro opcional por status e por dia (YYYY-MM-DD) - [Otávio Michels]
-function getAgendamentos({ status, data } = {}) {
+function getAgendamentos({ status, data, pet, tutor } = {}) {
     const where = []
     const params = []
     if (status) {
@@ -25,6 +25,15 @@ function getAgendamentos({ status, data } = {}) {
     if (data) {
         where.push('substr(a.data_hora, 1, 10) = ?')
         params.push(data)
+    }
+    // Filtros por pet e por tutor, para ver o histórico de atendimentos - [Gabriel França]
+    if (pet) {
+        where.push('a.pet_id = ?')
+        params.push(pet)
+    }
+    if (tutor) {
+        where.push('a.tutor_id = ?')
+        params.push(tutor)
     }
     const filtro = where.length ? `WHERE ${where.join(' AND ')}` : ''
     return all(`${SELECT_AGENDAMENTO} ${filtro} ORDER BY a.data_hora`, params)

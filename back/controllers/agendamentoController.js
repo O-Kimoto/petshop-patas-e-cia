@@ -33,9 +33,20 @@ async function dadosDoAgendamento(body) {
     return { tutor_id: tutorId, pet_id: petId, servico_id: servicoId, data_hora: dataHora, status, observacoes: texto(body.observacoes) }
 }
 
+// Converte o filtro (?pet= ou ?tutor=) em número; vazio vira "sem filtro" - [Gabriel França]
+function idDoFiltro(valor, nome) {
+    if (valor === undefined || valor === '') return null
+    const id = Number(valor)
+    if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, `O filtro ${nome} precisa ser um ID válido`)
+    return id
+}
+
 // Aceita ?status= e ?data=AAAA-MM-DD para filtrar - [Otávio Michels]
+// e também ?pet= e ?tutor=, para ver o histórico de um pet ou de um tutor - [Gabriel França]
 async function listar(req, res) {
-    const agendamentos = await model.getAgendamentos({ status: texto(req.query.status), data: texto(req.query.data) })
+    const pet = idDoFiltro(req.query.pet, 'pet')
+    const tutor = idDoFiltro(req.query.tutor, 'tutor')
+    const agendamentos = await model.getAgendamentos({ status: texto(req.query.status), data: texto(req.query.data), pet, tutor })
     res.json({ agendamentos })
 }
 

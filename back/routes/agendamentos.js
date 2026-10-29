@@ -27,6 +27,18 @@ router.use(authenticateToken)
  *         schema:
  *           type: string
  *           example: '2026-11-05'
+ *       - in: query
+ *         name: pet
+ *         required: false
+ *         description: ID do pet, para ver o histórico de atendimentos dele
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: tutor
+ *         required: false
+ *         description: ID do tutor, para ver os agendamentos de todos os pets dele
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
  *         description: Lista de agendamentos
