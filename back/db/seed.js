@@ -30,7 +30,7 @@ async function seed() {
         const tutor = await run(
             `INSERT INTO tutores (nome, email, telefone, cep, logradouro, numero, bairro, cidade, uf)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            ['Maria Silva', 'maria.silva@email.com', '(81) 99999-1234', '50030-230', 'Rua do Bom Jesus', '125', 'Recife', 'Recife', 'PE']
+            ['Maria Silva', 'maria.silva@email.com', '(81) 91239-4567', '50030-230', 'Rua do Bom Jesus', '125', 'Recife', 'Recife', 'PE']
         )
         const pet = await run(
             'INSERT INTO pets (nome, especie, raca, sexo, tutor_id) VALUES (?, ?, ?, ?, ?)',
