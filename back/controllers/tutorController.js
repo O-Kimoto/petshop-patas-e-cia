@@ -6,6 +6,11 @@ const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', '
 // Valida nome, telefone, e-mail e UF e normaliza o CEP para 00000-000 - [Otávio Michels]
 function dadosDoTutor(body) {
     exigirCampos(body, ['nome', 'telefone'])
+    // Telefone precisa ter DDD e número: 10 dígitos (fixo) ou 11 (celular) - [Gabriel França]
+    const digitosTelefone = String(body.telefone).replace(/\D/g, '')
+    if (digitosTelefone.length < 10 || digitosTelefone.length > 11) {
+        throw new HttpError(400, 'Telefone deve ter DDD e número (10 ou 11 dígitos)')
+    }
     const email = texto(body.email)
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         throw new HttpError(400, 'E-mail inválido')
