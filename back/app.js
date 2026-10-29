@@ -32,26 +32,20 @@ app.use(express.urlencoded({ extended: false }));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { customSiteTitle: 'API Petshop' }));
 app.get('/api-docs.json', (req, res) => res.json(swaggerSpec));
 
-// IMPORTANDO ROTAS
+// IMPORTANDO ROTAS: login e agendamentos (tutores, pets e serviços alimentam o formulário de agendamento) - [Otávio Michels]
 var authRouter = require('./routes/auth');
-var usersRouter = require('./routes/users');
 var tutoresRouter = require('./routes/tutores');
 var petsRouter = require('./routes/pets');
 var servicosRouter = require('./routes/servicos');
-var produtosRouter = require('./routes/produtos');
 var agendamentosRouter = require('./routes/agendamentos');
-var dashboardRouter = require('./routes/dashboard');
 
 // USANDO ROTAS (todas debaixo de /api para não misturar com as páginas do front) - [Otávio Michels]
 app.get('/api', (req, res) => res.json({ status: 'ok', api: 'Petshop', docs: '/api-docs' }));
 app.use('/api/auth', authRouter);
-app.use('/api/users', usersRouter);
 app.use('/api/tutores', tutoresRouter);
 app.use('/api/pets', petsRouter);
 app.use('/api/servicos', servicosRouter);
-app.use('/api/produtos', produtosRouter);
 app.use('/api/agendamentos', agendamentosRouter);
-app.use('/api/dashboard', dashboardRouter);
 
 // Rota /api inexistente responde JSON, não a página do front - [Otávio Michels]
 app.use('/api', (req, res) => res.status(404).json({ message: 'Rota não encontrada' }));

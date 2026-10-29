@@ -7,21 +7,15 @@
         </div>
 
         <div class="surface-card shadow-2 border-round-2xl p-4 sm:p-6">
-            <div class="text-900 text-2xl font-medium mb-1">{{ modoCadastro ? 'Criar conta' : 'Entrar' }}</div>
-            <p class="text-600 mt-0 mb-4">
-                {{ modoCadastro ? 'Preencha os dados para criar seu acesso.' : 'Use seu usuário e senha para acessar.' }}
-            </p>
+            <div class="text-900 text-2xl font-medium mb-1">Entrar</div>
+            <p class="text-600 mt-0 mb-4">Use seu usuário e senha para acessar.</p>
 
-            <div *ngIf="sessaoExpirada && !modoCadastro" class="p-3 mb-4 border-round bg-orange-50 text-orange-900">
+            <div *ngIf="sessaoExpirada" class="p-3 mb-4 border-round bg-orange-50 text-orange-900">
                 <i class="pi pi-clock mr-2"></i>Sua sessão expirou. Entre novamente.
             </div>
 
-            <!-- Um formulário só para entrar e para criar conta; Enter envia - [Otávio Michels] -->
-            <form (ngSubmit)="enviar()" class="p-fluid">
-                <div class="field" *ngIf="modoCadastro">
-                    <label for="nome" class="font-medium">Nome</label>
-                    <input id="nome" name="nome" type="text" pInputText [(ngModel)]="nome" placeholder="Seu nome" />
-                </div>
+            <!-- Formulário de login; Enter envia - [Otávio Michels] -->
+            <form (ngSubmit)="login()" class="p-fluid">
                 <div class="field">
                     <label for="username" class="font-medium">Usuário</label>
                     <input id="username" name="username" type="text" pInputText [(ngModel)]="username"
@@ -30,19 +24,11 @@
                 <div class="field mb-4">
                     <label for="password" class="font-medium">Senha</label>
                     <p-password inputId="password" name="password" [(ngModel)]="password" [feedback]="false"
-                        [toggleMask]="true" [placeholder]="modoCadastro ? 'Mínimo de 6 caracteres' : 'Sua senha'"></p-password>
+                        [toggleMask]="true" placeholder="Sua senha"></p-password>
                 </div>
-                <button pButton pRipple type="submit" [label]="modoCadastro ? 'Criar conta' : 'Entrar'"
-                    [icon]="modoCadastro ? 'pi pi-user-plus' : 'pi pi-sign-in'" [loading]="loading" class="p-3 text-lg"></button>
+                <button pButton pRipple type="submit" label="Entrar" icon="pi pi-sign-in" [loading]="loading"
+                    class="p-3 text-lg"></button>
             </form>
-
-            <div class="text-center mt-4 text-600">
-                <ng-container *ngIf="!modoCadastro">Não tem acesso?</ng-container>
-                <ng-container *ngIf="modoCadastro">Já tem conta?</ng-container>
-                <a class="font-medium cursor-pointer ml-1 text-primary" (click)="alternarModo()">
-                    {{ modoCadastro ? 'Entrar' : 'Criar conta' }}
-                </a>
-            </div>
         </div>
 
         <div class="text-center mt-4 text-500 text-sm">

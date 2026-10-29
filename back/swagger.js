@@ -20,15 +20,6 @@ const schemas = {
             password: { type: 'string', example: 'admin123' }
         }
     },
-    UsuarioInput: {
-        type: 'object',
-        required: ['nome', 'username'],
-        properties: {
-            nome: { type: 'string', example: 'Gabriel França' },
-            username: { type: 'string', example: 'gabriel' },
-            password: { type: 'string', example: 'senha123', description: 'Obrigatória ao criar; opcional ao editar' }
-        }
-    },
     Usuario: {
         type: 'object',
         properties: {
@@ -94,23 +85,6 @@ const schemas = {
             { $ref: '#/components/schemas/ServicoInput' }
         ]
     },
-    ProdutoInput: {
-        type: 'object',
-        required: ['nome', 'preco', 'estoque'],
-        properties: {
-            nome: { type: 'string', example: 'Ração Premium Cães Adultos 15 kg' },
-            descricao: { type: 'string', example: 'Ração seca sabor frango e arroz' },
-            categoria: { type: 'string', example: 'Ração', description: 'Ração, Brinquedos, Medicamentos, Acessórios ou Higiene' },
-            preco: { type: 'number', example: 219.9 },
-            estoque: { type: 'integer', example: 12 }
-        }
-    },
-    Produto: {
-        allOf: [
-            { type: 'object', properties: { id: { type: 'integer', example: 1 } } },
-            { $ref: '#/components/schemas/ProdutoInput' }
-        ]
-    },
     AgendamentoInput: {
         type: 'object',
         required: ['tutor_id', 'pet_id', 'servico_id', 'data_hora'],
@@ -168,20 +142,17 @@ const options = {
             title: 'API Petshop',
             version: '1.0.0',
             description:
-                'API REST do sistema de petshop: tutores, pets, serviços, produtos, agendamentos e usuários. ' +
+                'API REST do sistema de petshop: login e agendamentos (com as listas de tutores, pets e serviços que o agendamento usa). ' +
                 'Faça login em **POST /auth/login**, copie o token e clique em **Authorize** para testar as rotas protegidas.'
         },
         servers: [{ url: '/api', description: 'Este servidor' }],
         // Ordem dos grupos na página do Swagger - [Otávio Michels]
         tags: [
-            { name: 'Auth', description: 'Login, cadastro e usuário logado' },
+            { name: 'Auth', description: 'Login e usuário logado' },
+            { name: 'Agendamentos', description: 'Tutor + pet + serviço + data/hora + status' },
             { name: 'Tutores', description: 'Donos dos pets' },
             { name: 'Pets', description: 'Animais, ligados a um tutor (tutor_id)' },
-            { name: 'Serviços', description: 'Banho, tosa, consulta, vacinação...' },
-            { name: 'Produtos', description: 'Ração, brinquedos, medicamentos, com estoque' },
-            { name: 'Agendamentos', description: 'Tutor + pet + serviço + data/hora + status' },
-            { name: 'Usuários', description: 'Quem acessa o sistema' },
-            { name: 'Dashboard', description: 'Resumo do painel inicial' }
+            { name: 'Serviços', description: 'Banho, tosa, consulta, vacinação...' }
         ],
         components: {
             securitySchemes: {

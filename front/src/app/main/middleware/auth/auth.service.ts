@@ -47,11 +47,6 @@ export class AuthService {
     return response.token;
   }
 
-  // Cria uma conta pela tela de login (rota pública /auth/register) - [Otávio Michels]
-  register(dados: { nome: string; username: string; password: string }): Promise<any> {
-    return firstValueFrom(this.http.post(`${this.apiUrl}/register`, dados));
-  }
-
   setToken(token: string): void {
     localStorage.setItem(this.tokenKey, token);
   }
