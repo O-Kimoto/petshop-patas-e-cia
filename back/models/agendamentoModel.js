@@ -57,4 +57,13 @@ async function deleteAgendamento(id) {
     return changes > 0
 }
 
-module.exports = { getAgendamentos, findAgendamentoById, createAgendamento, updateAgendamento, deleteAgendamento }
+// Procura outro agendamento do mesmo pet no mesmo horário, ignorando os cancelados - [Gabriel França]
+function findConflito(petId, dataHora, ignorarId = 0) {
+    return get(
+        `SELECT id FROM agendamentos
+         WHERE pet_id = ? AND data_hora = ? AND status <> 'Cancelado' AND id <> ?`,
+        [petId, dataHora, ignorarId]
+    )
+}
+
+module.exports = { getAgendamentos, findAgendamentoById, createAgendamento, updateAgendamento, deleteAgendamento, findConflito }

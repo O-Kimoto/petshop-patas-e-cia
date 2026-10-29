@@ -45,15 +45,27 @@ async function buscar(req, res) {
     res.json({ agendamento })
 }
 
+// Não deixa marcar o mesmo pet duas vezes no mesmo horário - [Gabriel França]
+async function verificarConflito(dados, id = 0) {
+    if (dados.status === 'Cancelado') return
+    if (await model.findConflito(dados.pet_id, dados.data_hora, id)) {
+        throw new HttpError(409, 'Esse pet já tem um agendamento nesse horário')
+    }
+}
+
 async function criar(req, res) {
-    const agendamento = await model.createAgendamento(await dadosDoAgendamento(req.body))
+    const dados = await dadosDoAgendamento(req.body)
+    await verificarConflito(dados)
+    const agendamento = await model.createAgendamento(dados)
     res.status(201).json({ message: 'Agendamento criado com sucesso', agendamento })
 }
 
 async function atualizar(req, res) {
     const id = idDaRota(req)
     if (!(await model.findAgendamentoById(id))) throw new HttpError(404, 'Agendamento não encontrado')
-    const agendamento = await model.updateAgendamento(id, await dadosDoAgendamento(req.body))
+    const dados = await dadosDoAgendamento(req.body)
+    await verificarConflito(dados, id)
+    const agendamento = await model.updateAgendamento(id, dados)
     res.json({ message: 'Agendamento atualizado com sucesso', agendamento })
 }
 

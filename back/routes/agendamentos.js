@@ -64,6 +64,8 @@ router.use(authenticateToken)
  *                   $ref: '#/components/schemas/Agendamento'
  *       400:
  *         $ref: '#/components/responses/Invalido'
+ *       409:
+ *         description: Esse pet já tem um agendamento nesse horário
  *       401:
  *         $ref: '#/components/responses/NaoAutenticado'
  */
@@ -108,6 +110,8 @@ router.post('/', asyncHandler(controller.criar))
  *         description: Agendamento atualizado
  *       400:
  *         $ref: '#/components/responses/Invalido'
+ *       409:
+ *         description: Esse pet já tem um agendamento nesse horário
  *       401:
  *         $ref: '#/components/responses/NaoAutenticado'
  *       404:
