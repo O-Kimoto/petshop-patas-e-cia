@@ -1,160 +1,126 @@
 <div class="grid">
     <div class="col-12">
-        <div class="card px-6 py-6">
-            <p-toast></p-toast>
-            <p-toolbar styleClass="mb-4">
+        <div class="card px-4 py-4 md:px-6 md:py-5">
+            <p-toolbar styleClass="mb-4 gap-2">
                 <ng-template pTemplate="left">
-                    <div class="my-2">
-                        <button pButton pRipple label="New" icon="pi pi-plus" class="p-button-success mr-2"
-                            (click)="openNew()"></button>
-                        <button pButton pRipple label="Delete" icon="pi pi-trash" class="p-button-danger"
-                            (click)="deleteSelectedPets()" [disabled]="!selectedPets || !selectedPets.length"></button>
+                    <div class="flex flex-wrap gap-2">
+                        <button pButton pRipple label="Novo pet" icon="pi pi-plus" class="p-button-success"
+                            (click)="abrirNovo()" [disabled]="!tutores.length"></button>
+                        <p-dropdown [options]="tutores" optionLabel="nome" optionValue="id" [ngModel]="filtroTutor"
+                            (ngModelChange)="mudarFiltroTutor($event)" [filter]="true" [showClear]="true"
+                            placeholder="Filtrar por tutor" styleClass="w-full sm:w-16rem"></p-dropdown>
                     </div>
                 </ng-template>
-
                 <ng-template pTemplate="right">
-                    <p-fileUpload mode="basic" accept="image/*" [maxFileSize]="1000000" label="Import"
-                        chooseLabel="Import" class="mr-2 inline-block"></p-fileUpload>
-                    <button pButton pRipple label="Export" icon="pi pi-upload" class="p-button-help"
-                        (click)="dt.exportCSV()"></button>
+                    <button pButton pRipple label="Exportar CSV" icon="pi pi-download"
+                        class="p-button-help p-button-outlined" (click)="dt.exportCSV()"></button>
                 </ng-template>
             </p-toolbar>
 
-            <p-table #dt [value]="pets" [columns]="cols" responsiveLayout="scroll" [rows]="10"
-                [globalFilterFields]="['name','country.name','representative.name','status']" [paginator]="true"
-                [rowsPerPageOptions]="[10,20,30]" [showCurrentPageReport]="true"
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                [(selection)]="selectedPets" selectionMode="multiple" [rowHover]="true" dataKey="id">
+            <div *ngIf="!tutores.length && !carregando" class="p-3 mb-3 border-round bg-yellow-50 text-yellow-900">
+                <i class="pi pi-info-circle mr-2"></i>Cadastre um tutor antes de cadastrar pets.
+                <a routerLink="/tutores" class="font-medium ml-1">Ir para Tutores</a>
+            </div>
+
+            <p-table #dt [value]="pets" [columns]="colunasCsv" exportFilename="pets" [loading]="carregando"
+                responsiveLayout="stack" breakpoint="1200px" [rows]="10" [paginator]="true"
+                [rowsPerPageOptions]="[10, 20, 50]" [showCurrentPageReport]="true"
+                currentPageReportTemplate="{first} a {last} de {totalRecords} pets"
+                [globalFilterFields]="['nome', 'especie', 'raca', 'tutor_nome']" [rowHover]="true" dataKey="id">
                 <ng-template pTemplate="caption">
-                    <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
-                        <h5 class="m-0">Manage Pets</h5>
-                        <span class="block mt-2 md:mt-0 p-input-icon-left">
+                    <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-center gap-2">
+                        <h5 class="m-0">
+                            Pets
+                            <span *ngIf="filtroTutor" class="text-600 font-normal">de {{ nomeTutorFiltro }}</span>
+                        </h5>
+                        <span class="block p-input-icon-left">
                             <i class="pi pi-search"></i>
-                            <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Search..."
-                                class="w-full sm:w-auto" />
+                            <input pInputText type="text" (input)="onGlobalFilter(dt, $event)"
+                                placeholder="Buscar por nome, espécie, raça..." class="w-full sm:w-20rem" />
                         </span>
                     </div>
                 </ng-template>
                 <ng-template pTemplate="header">
                     <tr>
-                        <th style="width: 3rem">
-                            <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
-                        </th>
-                        <th pSortableColumn="id">Id <p-sortIcon field="id"></p-sortIcon></th>
-                        <th pSortableColumn="name">Nome <p-sortIcon field="name"></p-sortIcon></th>
-                        <th pSortableColumn="gender">Sexo <p-sortIcon field="gender"></p-sortIcon></th>
-                        <th pSortableColumn="colour">Cor <p-sortIcon field="colour"></p-sortIcon></th>
-                        <th pSortableColumn="breed">Raça <p-sortIcon field="breed"></p-sortIcon></th>
-                        <th pSortableColumn="breed">Tutor <p-sortIcon field="tutor"></p-sortIcon></th>
-                        <th pSortableColumn="actions">Ações <p-sortIcon field="actions"></p-sortIcon></th>
-                        <th></th>
+                        <th pSortableColumn="nome">Nome <p-sortIcon field="nome"></p-sortIcon></th>
+                        <th pSortableColumn="especie">Espécie <p-sortIcon field="especie"></p-sortIcon></th>
+                        <th pSortableColumn="raca">Raça <p-sortIcon field="raca"></p-sortIcon></th>
+                        <th>Sexo</th>
+                        <th pSortableColumn="tutor_nome">Tutor <p-sortIcon field="tutor_nome"></p-sortIcon></th>
+                        <th class="text-right">Ações</th>
                     </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-pet>
                     <tr>
+                        <td><span class="p-column-title">Nome</span><span class="font-medium">{{ pet.nome }}</span></td>
                         <td>
-                            <p-tableCheckbox [value]="pet"></p-tableCheckbox>
+                            <span class="p-column-title">Espécie</span>
+                            <span><span class="mr-2">{{ iconeEspecie(pet.especie) }}</span>{{ pet.especie }}</span>
                         </td>
-                        <td style="width:14%; min-width:10rem;"><span class="p-column-title">Code</span>
-                            {{pet.code || pet.id}}
-                        </td>
-                        <td style="width:14%; min-width:10rem;">
-                            <span class="p-column-title">Name</span>
-                            {{pet.name}}
-                        </td>
-                        <td style="width:14%; min-width:10rem;">
+                        <td><span class="p-column-title">Raça</span>{{ pet.raca || 'SRD' }}</td>
+                        <td>
                             <span class="p-column-title">Sexo</span>
-                            {{pet.gender}}
+                            <p-tag [value]="pet.sexo === 'M' ? 'Macho' : 'Fêmea'"
+                                [severity]="pet.sexo === 'M' ? 'info' : 'warning'"></p-tag>
                         </td>
-                        <td style="width:14%; min-width:10rem;">
-                            <span class="p-column-title">Cor</span>
-                            {{pet.color}}
-                        </td>
-                        <td style="width:14%; min-width:10rem;">
-                            <span class="p-column-title">Raça</span>
-                            {{pet.breed}}
-                        </td>
-                        <td style="width:14%; min-width:10rem;">
-                            <span class="p-column-title">Tutor</span>
-                            {{pet.id_tutor}}
-                        </td>
+                        <td><span class="p-column-title">Tutor</span>{{ pet.tutor_nome }}</td>
                         <td>
-                            <div class="flex">
-                                <button pButton pRipple icon="pi pi-pencil"
-                                    class="p-button-rounded p-button-success mr-2" (click)="editPet(pet)"></button>
+                            <span class="p-column-title">Ações</span>
+                            <div class="flex md:justify-content-end gap-2">
+                                <button pButton pRipple icon="pi pi-pencil" class="p-button-rounded p-button-success"
+                                    pTooltip="Editar" (click)="editar(pet)"></button>
                                 <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-warning"
-                                    (click)="deletePet(pet)"></button>
+                                    pTooltip="Excluir" (click)="excluir(pet)"></button>
                             </div>
                         </td>
                     </tr>
                 </ng-template>
+                <ng-template pTemplate="emptymessage">
+                    <tr><td colspan="6" class="text-center p-4">Nenhum pet encontrado.</td></tr>
+                </ng-template>
             </p-table>
         </div>
 
-        <p-dialog [(visible)]="petDialog" [style]="{width: '450px'}" header="Pet Details" [modal]="true"
-            class="p-fluid">
+        <p-dialog [(visible)]="petDialog" [style]="{ width: '480px' }" [breakpoints]="{ '560px': '95vw' }"
+            [header]="pet.id ? 'Editar pet' : 'Novo pet'" [modal]="true" class="p-fluid">
             <ng-template pTemplate="content">
                 <div class="field">
-                    <label for="name">Nome</label>
-                    <input type="text" pInputText id="name" [(ngModel)]="pet.name" required autofocus
-                        [ngClass]="{'ng-invalid ng-dirty' : submitted && !pet.name}" />
-                    <small class="ng-dirty ng-invalid" *ngIf="submitted && !pet.name">Nome é obrigatório</small>
+                    <label for="nome">Nome *</label>
+                    <input type="text" pInputText id="nome" [(ngModel)]="pet.nome" autofocus
+                        [ngClass]="{ 'campo-invalido': submitted && !pet.nome }" />
+                    <small class="p-error" *ngIf="submitted && !pet.nome">Nome é obrigatório</small>
                 </div>
                 <div class="field">
-                    <label for="name">Sexo</label>
-                    <input type="text" pInputText id="gender" [(ngModel)]="pet.gender" required autofocus
-                        [ngClass]="{'ng-invalid ng-dirty' : submitted && !pet.gender}" />
-                    <small class="ng-dirty ng-invalid" *ngIf="submitted && !pet.gender">Sexo é obrigatório</small>
+                    <label for="especie">Espécie *</label>
+                    <p-dropdown inputId="especie" appendTo="body" [options]="especies" [(ngModel)]="pet.especie"
+                        [editable]="true" placeholder="Escolha ou digite"
+                        [ngClass]="{ 'campo-invalido': submitted && !pet.especie }"></p-dropdown>
+                    <small class="p-error" *ngIf="submitted && !pet.especie">Espécie é obrigatória</small>
                 </div>
                 <div class="field">
-                    <label for="name">Cor</label>
-                    <input type="text" pInputText id="color" [(ngModel)]="pet.color" required autofocus
-                        [ngClass]="{'ng-invalid ng-dirty' : submitted && !pet.color}" />
-                    <small class="ng-dirty ng-invalid" *ngIf="submitted && !pet.color">Cor é obrigatória</small>
+                    <label for="raca">Raça</label>
+                    <input type="text" pInputText id="raca" [(ngModel)]="pet.raca" placeholder="Deixe vazio se for SRD" />
                 </div>
                 <div class="field">
-                    <label for="name">Raça</label>
-                    <input type="text" pInputText id="bree" [(ngModel)]="pet.breed" required autofocus
-                        [ngClass]="{'ng-invalid ng-dirty' : submitted && !pet.breed}" />
-                    <small class="ng-dirty ng-invalid" *ngIf="submitted && !pet.breed">Raça é obrigatória</small>
+                    <label>Sexo *</label>
+                    <p-selectButton [options]="sexos" [(ngModel)]="pet.sexo" optionLabel="label"
+                        optionValue="value"></p-selectButton>
+                    <small class="p-error" *ngIf="submitted && !pet.sexo">Sexo é obrigatório</small>
                 </div>
                 <div class="field">
-                    <p-dropdown appendTo="body" [options]="tutors" [(ngModel)]="pet.id_tutor" optionLabel="name"
-                        placeholder="Selecione um tutor" />
+                    <label for="tutor">Tutor *</label>
+                    <p-dropdown inputId="tutor" appendTo="body" [options]="tutores" optionLabel="nome" optionValue="id"
+                        [(ngModel)]="pet.tutor_id" [filter]="true" placeholder="Selecione o tutor"
+                        [ngClass]="{ 'campo-invalido': submitted && !pet.tutor_id }"></p-dropdown>
+                    <small class="p-error" *ngIf="submitted && !pet.tutor_id">Tutor é obrigatório</small>
                 </div>
             </ng-template>
 
             <ng-template pTemplate="footer">
-                <button pButton pRipple label="Cancel" icon="pi pi-times" class="p-button-text"
-                    (click)="hideDialog()"></button>
-                <button pButton pRipple label="Save" icon="pi pi-check" class="p-button-text"
-                    (click)="savePet()"></button>
-            </ng-template>
-        </p-dialog>
-
-        <p-dialog [(visible)]="deletePetDialog" header="Confirm" [modal]="true" [style]="{width:'450px'}">
-            <div class="flex align-items-center justify-content-center">
-                <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem"></i>
-                <span *ngIf="pet">Are you sure you want to delete <b>{{pet.name}}</b>?</span>
-            </div>
-            <ng-template pTemplate="footer">
-                <button pButton pRipple icon="pi pi-times" class="p-button-text" label="No"
-                    (click)="deletePetDialog = false"></button>
-                <button pButton pRipple icon="pi pi-check" class="p-button-text" label="Yes"
-                    (click)="confirmDelete()"></button>
-            </ng-template>
-        </p-dialog>
-
-        <p-dialog [(visible)]="deletePetsDialog" header="Confirm" [modal]="true" [style]="{width:'450px'}">
-            <div class="flex align-items-center justify-content-center">
-                <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem"></i>
-                <span>Are you sure you want to delete selected pets?</span>
-            </div>
-            <ng-template pTemplate="footer">
-                <button pButton pRipple icon="pi pi-times" class="p-button-text" label="No"
-                    (click)="deletePetsDialog = false"></button>
-                <button pButton pRipple icon="pi pi-check" class="p-button-text" label="Yes"
-                    (click)="confirmDeleteSelected()"></button>
+                <button pButton pRipple label="Cancelar" icon="pi pi-times" class="p-button-text"
+                    (click)="petDialog = false"></button>
+                <button pButton pRipple label="Salvar" icon="pi pi-check" [loading]="salvando"
+                    (click)="salvar()"></button>
             </ng-template>
         </p-dialog>
     </div>
