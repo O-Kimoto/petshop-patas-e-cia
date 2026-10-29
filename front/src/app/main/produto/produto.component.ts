@@ -19,6 +19,7 @@ export class ProdutoComponent implements OnInit {
     submitted = false;
     carregando = false;
     salvando = false;
+    ajustando: number | null = null;
     filtroCategoria: string | null = null;
 
     categorias = ['Ração', 'Brinquedos', 'Medicamentos', 'Acessórios', 'Higiene'];
@@ -99,6 +100,24 @@ export class ProdutoComponent implements OnInit {
                 }
             }
         });
+    }
+
+    // Dá entrada (+1) ou saída (-1) no estoque direto da tabela, sem abrir o formulário - [Apolo Lins]
+    // O estoque nunca fica negativo, e o botão trava enquanto a API salva
+    async ajustarEstoque(produto: Produto, quantidade: number) {
+        const novoEstoque = (produto.estoque ?? 0) + quantidade;
+        if (novoEstoque < 0 || this.ajustando) return;
+
+        this.ajustando = produto.id!;
+        try {
+            const atualizado = await this.produtoService.atualizar({ ...produto, estoque: novoEstoque });
+            produto.estoque = atualizado.estoque;
+            this.messageService.add({ severity: 'success', summary: quantidade > 0 ? 'Entrada' : 'Saída', detail: `${produto.nome}: ${produto.estoque} un.`, life: 2000 });
+        } catch (err) {
+            this.erro(err);
+        } finally {
+            this.ajustando = null;
+        }
     }
 
     // Cor da etiqueta de estoque: vermelho zerado, amarelo baixo, verde normal - [Otávio Michels]

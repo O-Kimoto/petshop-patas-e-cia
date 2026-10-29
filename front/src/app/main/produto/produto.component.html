@@ -53,8 +53,17 @@
                         <td><span class="p-column-title">Preço</span>{{ produto.preco | currency:'BRL' }}</td>
                         <td>
                             <span class="p-column-title">Estoque</span>
-                            <p-tag [value]="produto.estoque === 0 ? 'Sem estoque' : produto.estoque + ' un.'"
-                                [severity]="severidadeEstoque(produto.estoque)"></p-tag>
+                            <!-- Botões de saída (−) e entrada (+) de estoque ao lado da etiqueta - [Apolo Lins] -->
+                            <div class="flex align-items-center gap-1">
+                                <button pButton pRipple icon="pi pi-minus" class="p-button-rounded p-button-text p-button-sm"
+                                    pTooltip="Saída de 1 unidade" [disabled]="!produto.estoque || ajustando === produto.id"
+                                    (click)="ajustarEstoque(produto, -1)"></button>
+                                <p-tag [value]="produto.estoque === 0 ? 'Sem estoque' : produto.estoque + ' un.'"
+                                    [severity]="severidadeEstoque(produto.estoque)"></p-tag>
+                                <button pButton pRipple icon="pi pi-plus" class="p-button-rounded p-button-text p-button-sm"
+                                    pTooltip="Entrada de 1 unidade" [disabled]="ajustando === produto.id"
+                                    (click)="ajustarEstoque(produto, 1)"></button>
+                            </div>
                         </td>
                         <td>
                             <span class="p-column-title">Ações</span>
