@@ -23,7 +23,11 @@
                 [globalFilterFields]="['nome', 'descricao', 'categoria']" [rowHover]="true" dataKey="id">
                 <ng-template pTemplate="caption">
                     <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-center gap-2">
-                        <h5 class="m-0">Produtos</h5>
+                        <!-- Valor total do estoque (preço × quantidade) embaixo do título - [Apolo Lins] -->
+                        <div class="flex flex-column gap-1">
+                            <h5 class="m-0">Produtos</h5>
+                            <small class="text-600">Valor em estoque: <b>{{ valorEmEstoque | currency:'BRL' }}</b></small>
+                        </div>
                         <span class="block p-input-icon-left">
                             <i class="pi pi-search"></i>
                             <input pInputText type="text" (input)="onGlobalFilter(dt, $event)"

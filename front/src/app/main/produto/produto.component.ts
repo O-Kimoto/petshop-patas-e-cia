@@ -120,6 +120,11 @@ export class ProdutoComponent implements OnInit {
         }
     }
 
+    // Soma preço × quantidade dos produtos da lista (respeita o filtro de categoria) - [Apolo Lins]
+    get valorEmEstoque(): number {
+        return this.produtos.reduce((total, p) => total + (p.preco ?? 0) * (p.estoque ?? 0), 0);
+    }
+
     // Cor da etiqueta de estoque: vermelho zerado, amarelo baixo, verde normal - [Otávio Michels]
     severidadeEstoque(estoque = 0): string {
         if (estoque === 0) return 'danger';
