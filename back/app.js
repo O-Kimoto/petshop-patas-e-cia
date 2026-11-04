@@ -38,6 +38,7 @@ var tutoresRouter = require('./routes/tutores');
 var petsRouter = require('./routes/pets');
 var servicosRouter = require('./routes/servicos');
 var agendamentosRouter = require('./routes/agendamentos');
+var produtosRouter = require('./routes/produtos');
 
 // USANDO ROTAS (todas debaixo de /api para não misturar com as páginas do front) - [Otávio Michels]
 app.get('/api', (req, res) => res.json({ status: 'ok', api: 'Petshop', docs: '/api-docs' }));
@@ -46,6 +47,7 @@ app.use('/api/tutores', tutoresRouter);
 app.use('/api/pets', petsRouter);
 app.use('/api/servicos', servicosRouter);
 app.use('/api/agendamentos', agendamentosRouter);
+app.use('/api/produtos', produtosRouter);
 
 // Rota /api inexistente responde JSON, não a página do front - [Otávio Michels]
 app.use('/api', (req, res) => res.status(404).json({ message: 'Rota não encontrada' }));

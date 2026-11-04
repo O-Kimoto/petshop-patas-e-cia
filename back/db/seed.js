@@ -25,6 +25,20 @@ async function seed() {
         }
     }
 
+    const totalProdutos = await get('SELECT COUNT(*) AS total FROM produtos')
+    if (totalProdutos.total === 0) {
+        const produtos = [
+            ['Ração Premium Cães Adultos 15 kg', 'Ração seca sabor frango e arroz', 'Ração', 219.9, 12],
+            ['Ração Gatos Castrados 10 kg', 'Controle de peso, sabor salmão', 'Ração', 189.9, 3],
+            ['Bola de Borracha', 'Bola resistente para cães médios', 'Brinquedos', 24.9, 30],
+            ['Arranhador para Gatos', 'Arranhador de sisal com base de 40 cm', 'Brinquedos', 89.9, 6],
+            ['Vermífugo 4 comprimidos', 'Para cães de 10 a 20 kg', 'Medicamentos', 39.9, 2]
+        ]
+        for (const p of produtos) {
+            await run('INSERT INTO produtos (nome, descricao, categoria, preco, estoque) VALUES (?, ?, ?, ?, ?)', p)
+        }
+    }
+
     const totalTutores = await get('SELECT COUNT(*) AS total FROM tutores')
     if (totalTutores.total === 0) {
         const tutor = await run(

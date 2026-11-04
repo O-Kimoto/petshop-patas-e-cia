@@ -74,6 +74,15 @@ const SCHEMA = [
         preco REAL NOT NULL CHECK (preco >= 0),
         criado_em TEXT DEFAULT CURRENT_TIMESTAMP
     )`,
+    `CREATE TABLE IF NOT EXISTS produtos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome TEXT NOT NULL,
+        descricao TEXT,
+        categoria TEXT,
+        preco REAL NOT NULL CHECK (preco >= 0),
+        estoque INTEGER NOT NULL DEFAULT 0 CHECK (estoque >= 0),
+        criado_em TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
     `CREATE TABLE IF NOT EXISTS agendamentos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tutor_id INTEGER NOT NULL REFERENCES tutores(id) ON DELETE RESTRICT,
@@ -106,7 +115,7 @@ const ready = (async () => {
         await run(sql)
     }
     await migrarValorDoAgendamento()
-    console.log('Tabelas users, tutores, pets, servicos e agendamentos prontas')
+    console.log('Tabelas users, tutores, pets, servicos, produtos e agendamentos prontas')
 })()
 
 module.exports = { db, run, get, all, ready }

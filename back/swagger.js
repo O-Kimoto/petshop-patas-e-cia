@@ -93,6 +93,30 @@ const schemas = {
             ids: { type: 'array', items: { type: 'integer' }, example: [1, 2], description: 'Serviços a reajustar; vazio = todos' }
         }
     },
+    ProdutoInput: {
+        type: 'object',
+        required: ['nome', 'preco', 'estoque'],
+        properties: {
+            nome: { type: 'string', example: 'Ração Premium Cães Adultos 15 kg' },
+            descricao: { type: 'string', example: 'Ração seca sabor frango e arroz' },
+            categoria: { type: 'string', example: 'Ração', description: 'Ração, Brinquedos, Medicamentos, Acessórios ou Higiene' },
+            preco: { type: 'number', example: 219.9 },
+            estoque: { type: 'integer', example: 12 }
+        }
+    },
+    Produto: {
+        allOf: [
+            { type: 'object', properties: { id: { type: 'integer', example: 1 } } },
+            { $ref: '#/components/schemas/ProdutoInput' }
+        ]
+    },
+    MovimentoEstoque: {
+        type: 'object',
+        required: ['quantidade'],
+        properties: {
+            quantidade: { type: 'integer', example: -1, description: 'Positivo = entrada, negativo = saída' }
+        }
+    },
     AgendamentoInput: {
         type: 'object',
         required: ['tutor_id', 'pet_id', 'servico_id', 'data_hora'],
@@ -161,7 +185,8 @@ const options = {
             { name: 'Agendamentos', description: 'Tutor + pet + serviço + data/hora + status' },
             { name: 'Tutores', description: 'Donos dos pets' },
             { name: 'Pets', description: 'Animais, ligados a um tutor (tutor_id)' },
-            { name: 'Serviços', description: 'Banho, tosa, consulta, vacinação...' }
+            { name: 'Serviços', description: 'Banho, tosa, consulta, vacinação...' },
+            { name: 'Produtos', description: 'Ração, brinquedos, medicamentos, com estoque' }
         ],
         components: {
             securitySchemes: {
