@@ -197,6 +197,7 @@ const options = {
             { name: 'Pets', description: 'Animais, ligados a um tutor (tutor_id)' },
             { name: 'Serviços', description: 'Banho, tosa, consulta, vacinação...' },
             { name: 'Produtos', description: 'Ração, brinquedos, medicamentos, com estoque' },
+            { name: 'Usuários', description: 'Quem acessa o sistema' },
             { name: 'Dashboard', description: 'Resumo do painel inicial' }
         ],
         components: {

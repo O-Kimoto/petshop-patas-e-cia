@@ -38,6 +38,7 @@ var tutoresRouter = require('./routes/tutores');
 var petsRouter = require('./routes/pets');
 var servicosRouter = require('./routes/servicos');
 var agendamentosRouter = require('./routes/agendamentos');
+var usersRouter = require('./routes/users');
 var produtosRouter = require('./routes/produtos');
 var dashboardRouter = require('./routes/dashboard');
 
@@ -48,6 +49,7 @@ app.use('/api/tutores', tutoresRouter);
 app.use('/api/pets', petsRouter);
 app.use('/api/servicos', servicosRouter);
 app.use('/api/agendamentos', agendamentosRouter);
+app.use('/api/users', usersRouter);
 app.use('/api/produtos', produtosRouter);
 app.use('/api/dashboard', dashboardRouter);
 
