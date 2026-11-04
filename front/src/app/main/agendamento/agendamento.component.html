@@ -73,6 +73,9 @@
                                 <button *ngIf="emAberto(a)" pButton pRipple icon="pi pi-check"
                                     class="p-button-rounded p-button-outlined p-button-success" pTooltip="Concluir"
                                     (click)="mudarStatus(a, 'Concluído')"></button>
+                                <button pButton pRipple icon="pi pi-history" class="p-button-rounded p-button-outlined p-button-secondary"
+                                    pTooltip="Histórico do pet" [routerLink]="['/historico']"
+                                    [queryParams]="{ tutor: a.tutor_id, pet: a.pet_id }"></button>
                                 <button pButton pRipple icon="pi pi-pencil" class="p-button-rounded p-button-success"
                                     pTooltip="Editar" (click)="editar(a)"></button>
                                 <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-warning"

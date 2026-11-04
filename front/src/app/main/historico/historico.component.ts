@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { Agendamento, StatusAgendamento } from '../agendamento/models/agendamento';
 import { AgendamentoService } from '../agendamento/services/agendamento.service';
@@ -49,7 +50,8 @@ export class HistoricoComponent implements OnInit {
         private agendamentoService: AgendamentoService,
         private tutorService: TutorService,
         private petService: PetService,
-        private messageService: MessageService
+        private messageService: MessageService,
+        private route: ActivatedRoute
     ) { }
 
     async ngOnInit() {
@@ -57,6 +59,17 @@ export class HistoricoComponent implements OnInit {
             this.tutores = await this.tutorService.listar();
         } catch (err) {
             this.erro(err);
+            return;
+        }
+        // Vindo do atalho da tela de agendamentos: /historico?tutor=1&pet=2 já abre filtrado
+        const params = this.route.snapshot.queryParamMap;
+        const tutor = Number(params.get('tutor'));
+        const pet = Number(params.get('pet'));
+        if (tutor && this.tutores.some(t => t.id === tutor)) {
+            this.tutorId = tutor;
+            await this.carregarPets();
+            this.petId = this.petsDoTutor.some(p => p.id === pet) ? pet : null;
+            await this.carregar();
         }
     }
 
