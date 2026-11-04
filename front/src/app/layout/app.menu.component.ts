@@ -33,7 +33,7 @@ export class AppMenuComponent implements OnInit {
             {
                 label: 'Cadastros',
                 items: [
-                    { label: 'Tutores', icon: 'pi pi-fw pi-users' },
+                    { label: 'Tutores', icon: 'pi pi-fw pi-users', routerLink: ['/tutores'] },
                     { label: 'Pets', icon: 'pi pi-fw pi-heart', routerLink: ['/pets'] }
                 ]
             },
