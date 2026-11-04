@@ -3,13 +3,15 @@ const path = require('path')
 // Dois jeitos de guardar os dados, com as mesmas funções run/get/all para os models:
 // - TURSO_DATABASE_URL definida (site na Vercel): banco SQLite online no Turso, que não some entre os acessos
 // - sem ela (máquina local e Codespaces): arquivo petshop.db, como sempre
-const TURSO_URL = process.env.TURSO_DATABASE_URL
+// Tira espaços, quebras de linha e aspas que costumam vir grudados ao colar a URL e o token no painel
+const limpar = (valor) => String(valor || '').trim().replace(/^["']+|["']+$/g, '').trim()
+const TURSO_URL = limpar(process.env.TURSO_DATABASE_URL)
 
 let run, get, all
 
 if (TURSO_URL) {
     const { createClient } = require('@libsql/client')
-    const client = createClient({ url: TURSO_URL, authToken: process.env.TURSO_AUTH_TOKEN })
+    const client = createClient({ url: TURSO_URL, authToken: limpar(process.env.TURSO_AUTH_TOKEN) || undefined })
     console.log('Banco conectado no Turso')
 
     // O Turso devolve linhas "array-like"; aqui viram objetos simples { coluna: valor }, iguais aos do sqlite3
