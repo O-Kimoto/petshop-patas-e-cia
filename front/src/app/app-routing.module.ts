@@ -20,7 +20,8 @@ import { AuthGuard } from './main/middleware/guards/auth.guard';
                     { path: 'historico', loadChildren: () => import('./main/historico/historico.module').then(m => m.HistoricoModule) },
                     { path: 'usuarios', loadChildren: () => import('./main/usuario/usuario.module').then(m => m.UsuarioModule) },
                     { path: 'pets', loadChildren: () => import('./main/pet/pet.module').then(m => m.PetModule) },
-                    { path: 'tutores', loadChildren: () => import('./main/tutor/tutor.module').then(m => m.TutorModule) }
+                    { path: 'tutores', loadChildren: () => import('./main/tutor/tutor.module').then(m => m.TutorModule) },
+                    { path: 'produtos', loadChildren: () => import('./main/produto/produto.module').then(m => m.ProdutoModule) }
                 ]
             },
             { path: 'auth', loadChildren: () => import('./main/middleware/auth/auth.module').then(m => m.AuthModule) },
