@@ -175,7 +175,8 @@ const options = {
             title: 'API Petshop',
             version: '1.0.0',
             description:
-                'API REST do sistema de petshop: login e agendamentos (com as listas de tutores, pets e serviços que o agendamento usa). ' +
+                'API REST do sistema de petshop: tutores, pets, serviços (com reajuste de preços), produtos (com estoque), ' +
+                'agendamentos, usuários e o resumo do painel. ' +
                 'Faça login em **POST /auth/login**, copie o token e clique em **Authorize** para testar as rotas protegidas.'
         },
         servers: [{ url: '/api', description: 'Este servidor' }],

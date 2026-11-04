@@ -1,6 +1,7 @@
 import { OnInit } from '@angular/core';
 import { Component } from '@angular/core';
 import { LayoutService } from './service/app.layout.service';
+import { environment } from '../../environments/environment';
 
 @Component({
     selector: 'app-menu',
@@ -13,7 +14,7 @@ export class AppMenuComponent implements OnInit {
     constructor(public layoutService: LayoutService) { }
 
     // Menu lateral do petshop, agrupado por assunto - [Otávio Michels]
-    // Nesta parte só Agendamentos funciona; os outros itens ficam no layout, mas ainda sem link
+    // Itens sem routerLink ainda não têm tela: ficam no layout, mas sem link
     ngOnInit() {
         this.model = [
             {
@@ -47,7 +48,8 @@ export class AppMenuComponent implements OnInit {
                 label: 'Sistema',
                 items: [
                     { label: 'Usuários', icon: 'pi pi-fw pi-user-edit' },
-                    { label: 'Documentação da API', icon: 'pi pi-fw pi-book' }
+                    // Abre o Swagger numa aba nova (em produção o caminho é relativo: /api-docs)
+                    { label: 'Documentação da API', icon: 'pi pi-fw pi-book', url: environment.docsUrl, target: '_blank' }
                 ]
             }
         ];

@@ -32,7 +32,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { customSiteTitle: 'API Petshop' }));
 app.get('/api-docs.json', (req, res) => res.json(swaggerSpec));
 
-// IMPORTANDO ROTAS: login e agendamentos (tutores, pets e serviços alimentam o formulário de agendamento) - [Otávio Michels]
+// IMPORTANDO ROTAS
 var authRouter = require('./routes/auth');
 var tutoresRouter = require('./routes/tutores');
 var petsRouter = require('./routes/pets');
