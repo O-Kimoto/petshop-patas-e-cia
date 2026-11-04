@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs')
-const { run, get } = require('./database')
+const { run, get, all } = require('./database')
 
 // Cria o usuário administrador e os dados que o agendamento precisa (serviços, tutor e pets) quando o banco está vazio - [Otávio Michels]
 async function seed() {
@@ -10,6 +10,15 @@ async function seed() {
         const hash = await bcrypt.hash(password, 10)
         await run('INSERT INTO users (nome, username, password) VALUES (?, ?, ?)', ['Administrador', username, hash])
         console.log(`Usuário inicial criado: ${username}`)
+    }
+
+    // Avisa a cada início se algum usuário ainda entra com a senha padrão admin123, que está no repositório
+    const comSenhaPadrao = []
+    for (const u of await all('SELECT username, password FROM users')) {
+        if (await bcrypt.compare('admin123', u.password)) comSenhaPadrao.push(u.username)
+    }
+    if (comSenhaPadrao.length) {
+        console.warn(`ATENÇÃO: ${comSenhaPadrao.join(', ')} ainda entra(m) com a senha padrão admin123. Troque na tela de Usuários.`)
     }
 
     const totalServicos = await get('SELECT COUNT(*) AS total FROM servicos')

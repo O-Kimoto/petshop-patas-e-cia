@@ -47,6 +47,11 @@ export class AuthService {
     return response.token;
   }
 
+  // Pergunta à API se o "Criar conta" está ligado (CADASTRO_PUBLICO no back/.env)
+  configuracao(): Promise<{ cadastroPublico: boolean }> {
+    return firstValueFrom(this.http.get<{ cadastroPublico: boolean }>(`${this.apiUrl}/config`));
+  }
+
   // Cria uma conta pela tela de login (rota pública /auth/register) - [Otávio Michels]
   register(dados: { nome: string; username: string; password: string }): Promise<any> {
     return firstValueFrom(this.http.post(`${this.apiUrl}/register`, dados));

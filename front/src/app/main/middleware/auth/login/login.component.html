@@ -17,6 +17,10 @@
             </div>
 
             <!-- Um formulário só para entrar e para criar conta; Enter envia - [Otávio Michels] -->
+            <div *ngIf="!cadastroPublico" class="text-600 text-sm mb-3">
+                <i class="pi pi-info-circle mr-1"></i>Sem acesso? Peça ao administrador para criar seu usuário.
+            </div>
+
             <form (ngSubmit)="enviar()" class="p-fluid">
                 <div class="field" *ngIf="modoCadastro">
                     <label for="nome" class="font-medium">Nome</label>
@@ -36,7 +40,8 @@
                     [icon]="modoCadastro ? 'pi pi-user-plus' : 'pi pi-sign-in'" [loading]="loading" class="p-3 text-lg"></button>
             </form>
 
-            <div class="text-center mt-4 text-600">
+            <!-- O link só aparece com CADASTRO_PUBLICO=sim no back/.env -->
+            <div class="text-center mt-4 text-600" *ngIf="cadastroPublico">
                 <ng-container *ngIf="!modoCadastro">Não tem acesso?</ng-container>
                 <ng-container *ngIf="modoCadastro">Já tem conta?</ng-container>
                 <a class="font-medium cursor-pointer ml-1 text-primary" (click)="alternarModo()">

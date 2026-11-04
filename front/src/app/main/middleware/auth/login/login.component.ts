@@ -19,6 +19,8 @@ export class LoginComponent implements OnInit {
     password = '';
     loading = false;
     modoCadastro = false;
+    // Só fica true se a API disser que o cadastro público está ligado
+    cadastroPublico = false;
     sessaoExpirada = false;
     docsUrl = environment.docsUrl;
 
@@ -36,6 +38,10 @@ export class LoginComponent implements OnInit {
             return;
         }
         this.sessaoExpirada = this.route.snapshot.queryParamMap.has('expirado');
+        // Se a API não responder, o link continua escondido (o padrão é o cadastro desligado)
+        this.authService.configuracao()
+            .then(c => this.cadastroPublico = !!c.cadastroPublico)
+            .catch(() => this.cadastroPublico = false);
     }
 
     alternarModo() {

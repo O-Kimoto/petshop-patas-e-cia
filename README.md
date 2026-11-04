@@ -18,7 +18,7 @@ histórico de atendimentos e um painel com o resumo do dia.
 | Serviços | Preços de banho, tosa, consulta etc. e reajuste em % (todos ou só os marcados, com prévia) |
 | Produtos | Estoque com botões de entrada e saída, valor total em estoque e filtro por categoria |
 | Usuários | Quem acessa o sistema; ninguém consegue excluir o próprio usuário |
-| Login | Entrar ou criar conta (o "Criar conta" pode ser desligado com `CADASTRO_PUBLICO=nao` no `back/.env`) |
+| Login | Entrar; o "Criar conta" só aparece com `CADASTRO_PUBLICO=sim` no `back/.env` (vem desligado) |
 
 O valor de cada agendamento é guardado no dia em que ele é marcado, então um reajuste de preço não muda o
 histórico nem o faturamento de meses anteriores.
@@ -32,17 +32,19 @@ npm run setup
 npm start
 ```
 
-O `setup` instala as dependências do back e do front, cria o `back/.env` com uma chave JWT aleatória e gera
-o build do front. Depois do `npm start`, tudo fica no mesmo endereço:
+O `setup` instala as dependências do back e do front, cria o `back/.env` com uma chave JWT e uma senha de
+administrador aleatórias e gera o build do front. Depois do `npm start`, tudo fica no mesmo endereço:
 
 - Sistema: http://localhost:3000
 - Documentação da API (Swagger): http://localhost:3000/api-docs
 
-Login inicial: o usuário e a senha que estão em `back/.env` (`ADMIN_USER` e `ADMIN_PASSWORD`; o padrão é
-`admin` / `admin123`). Esse usuário só é criado quando o banco está vazio. Troque a senha pela tela de
-Usuários.
+Login inicial: o usuário `admin` com a senha que o `setup` mostrou no terminal. Ela fica guardada em
+`back/.env` (`ADMIN_PASSWORD`). Esse usuário só é criado quando o banco está vazio; se o banco foi criado
+antes, com a senha antiga `admin123`, a API avisa no terminal até ela ser trocada na tela de Usuários.
 
 No GitHub Codespaces o `setup` roda sozinho ao criar o ambiente e o servidor liga sozinho na porta 3000.
+Essa porta fica **pública** (qualquer pessoa com o link abre o sistema), por isso o "Criar conta" vem
+desligado: novos usuários são criados por quem já está logado, na tela de Usuários.
 
 ### Desenvolvimento (com recarga automática)
 

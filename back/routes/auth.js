@@ -1,15 +1,36 @@
 const express = require('express')
 const authenticateToken = require('../middleware/auth')
 const { asyncHandler } = require('../controllers/helpers')
-const { register, login, me } = require('../controllers/authController')
+const { register, login, me, config } = require('../controllers/authController')
 const router = express.Router()
+
+/**
+ * @swagger
+ * /auth/config:
+ *   get:
+ *     summary: Diz se o "Criar conta" está ligado (rota pública)
+ *     tags: [Auth]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Configuração da tela de login
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 cadastroPublico:
+ *                   type: boolean
+ *                   example: false
+ */
+router.get('/config', config)
 
 /**
  * @swagger
  * /auth/register:
  *   post:
  *     summary: Cria uma conta de usuário (rota pública)
- *     description: Pode ser desligada com CADASTRO_PUBLICO=nao no back/.env.
+ *     description: Só funciona com CADASTRO_PUBLICO=sim no back/.env (vem desligado).
  *     tags: [Auth]
  *     security: []
  *     requestBody:

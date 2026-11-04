@@ -12,10 +12,15 @@ function gerarToken(user) {
     )
 }
 
+// O "Criar conta" fica desligado, a não ser que o .env tenha CADASTRO_PUBLICO=sim.
+// Toda conta tem acesso total e o Codespaces deixa a porta pública: com o cadastro ligado, qualquer um com o link entraria.
+function cadastroPublicoLigado() {
+    return String(process.env.CADASTRO_PUBLICO || 'nao').trim().toLowerCase() === 'sim'
+}
+
 // Cadastro público de usuário (tela "Criar conta" do login) - [Otávio Michels]
-// Com CADASTRO_PUBLICO=nao no .env, só um usuário logado cria contas (pela tela de Usuários)
 async function register(req, res) {
-    if (String(process.env.CADASTRO_PUBLICO || 'sim').trim().toLowerCase() === 'nao') {
+    if (!cadastroPublicoLigado()) {
         throw new HttpError(403, 'O cadastro de novas contas está desligado. Peça um acesso ao administrador.')
     }
     exigirCampos(req.body, ['username', 'password'])
@@ -53,4 +58,9 @@ async function me(req, res) {
     res.json({ user })
 }
 
-module.exports = { register, login, me }
+// Rota pública que diz à tela de login se deve mostrar o link "Criar conta"
+function config(req, res) {
+    res.json({ cadastroPublico: cadastroPublicoLigado() })
+}
+
+module.exports = { register, login, me, config }
