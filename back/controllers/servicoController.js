@@ -34,7 +34,13 @@ async function remover(req, res) {
     const apagou = await model.deleteServico(id).catch((err) =>
         traduzirEmUso(err, 'Este serviço é usado em agendamentos e não pode ser excluído.')
     )
-    if (!apagou) throw new HttpError(404, 'Serviço não encontrado')
+    if (!apagou) {
+        // Não apagou: ou não existe, ou está em algum agendamento
+        if (await model.findServicoById(id)) {
+            throw new HttpError(409, 'Este serviço é usado em agendamentos e não pode ser excluído.')
+        }
+        throw new HttpError(404, 'Serviço não encontrado')
+    }
     res.json({ message: 'Serviço excluído com sucesso' })
 }
 

@@ -1,0 +1,19 @@
+{
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "framework": null,
+    "installCommand": "npm install --prefix back && npm install --prefix front",
+    "buildCommand": "npm run build --prefix front",
+    "outputDirectory": "front/dist/petshop",
+    "functions": {
+        "api/index.js": {
+            "includeFiles": "back/routes/**",
+            "maxDuration": 30
+        }
+    },
+    "rewrites": [
+        { "source": "/api/(.*)", "destination": "/api" },
+        { "source": "/api-docs", "destination": "/api" },
+        { "source": "/api-docs/(.*)", "destination": "/api" },
+        { "source": "/api-docs.json", "destination": "/api" }
+    ]
+}

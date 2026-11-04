@@ -34,8 +34,15 @@ async function updateTutor(id, t) {
     return findTutorById(id)
 }
 
+// Só apaga se o tutor não tiver pets nem agendamentos; a conferência fica no próprio DELETE,
+// então vale mesmo no Turso, onde a chave estrangeira pode não ser verificada
 async function deleteTutor(id) {
-    const { changes } = await run('DELETE FROM tutores WHERE id = ?', [id])
+    const { changes } = await run(
+        `DELETE FROM tutores WHERE id = ?
+           AND NOT EXISTS (SELECT 1 FROM pets WHERE tutor_id = ?)
+           AND NOT EXISTS (SELECT 1 FROM agendamentos WHERE tutor_id = ?)`,
+        [id, id, id]
+    )
     return changes > 0
 }
 

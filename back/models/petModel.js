@@ -35,8 +35,12 @@ async function updatePet(id, { nome, especie, raca, sexo, tutor_id }) {
     return findPetById(id)
 }
 
+// Só apaga se o pet não tiver agendamentos (conferido no próprio DELETE, vale também no Turso)
 async function deletePet(id) {
-    const { changes } = await run('DELETE FROM pets WHERE id = ?', [id])
+    const { changes } = await run(
+        'DELETE FROM pets WHERE id = ? AND NOT EXISTS (SELECT 1 FROM agendamentos WHERE pet_id = ?)',
+        [id, id]
+    )
     return changes > 0
 }
 

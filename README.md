@@ -60,13 +60,38 @@ npm run dev:front
 
 O front abre em http://localhost:4200 e conversa com a API na porta 3000.
 
+## Publicar na Vercel (banco no Turso)
+
+Na Vercel o servidor não guarda arquivos, então o `petshop.db` não serve lá. O banco online fica no
+[Turso](https://turso.tech), que é SQLite na nuvem (tem plano grátis). As telas viram arquivos estáticos e a
+API roda como função (`api/index.js`); o `vercel.json` já tem tudo configurado.
+
+1. **Turso:** crie uma conta e um banco (ex.: `petshop`). Copie a **URL** do banco (começa com `libsql://`)
+   e gere um **token**.
+2. **Vercel:** *Add New → Project*, importe este repositório do GitHub e, antes de clicar em *Deploy*, abra
+   *Environment Variables* e cadastre:
+
+   | Variável | Valor |
+   |----------|-------|
+   | `TURSO_DATABASE_URL` | a URL do banco no Turso |
+   | `TURSO_AUTH_TOKEN` | o token do Turso |
+   | `JWT_SECRET` | uma chave longa e aleatória (ex.: o resultado de `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`) |
+   | `ADMIN_PASSWORD` | a senha do usuário `admin` (só vale na primeira vez, quando o banco está vazio) |
+
+3. Clique em *Deploy*. Na primeira requisição a API cria as tabelas e os dados de exemplo no Turso.
+
+Depois disso, cada `git push` na `main` publica uma versão nova sozinho. Sem `TURSO_DATABASE_URL`, o site
+até sobe, mas guarda os dados em `/tmp`, que a Vercel apaga de tempos em tempos.
+
 ## Estrutura
 
 ```
+api/index.js           entrada da API quando o site roda na Vercel
+vercel.json            como a Vercel monta o site (build do front + função da API)
 back/
   bin/www              sobe o servidor depois de preparar o banco e os dados iniciais
   app.js               rotas, CORS, Swagger e tratamento de erros
-  db/                  conexão SQLite, criação das tabelas e dados de exemplo (seed)
+  db/                  conexão (arquivo SQLite local ou Turso), criação das tabelas e dados de exemplo (seed)
   routes/              rotas REST (com a documentação do Swagger em comentários)
   controllers/         validações e regras de cada recurso
   models/              consultas SQL

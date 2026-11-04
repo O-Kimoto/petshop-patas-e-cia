@@ -1,0 +1,7 @@
+# Nunca mandar para a Vercel: segredos locais, bancos locais e pastas geradas
+back/.env
+**/*.db
+**/node_modules
+front/dist
+front/.angular
+entregas

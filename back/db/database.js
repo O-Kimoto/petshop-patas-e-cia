@@ -1,35 +1,67 @@
 const path = require('path')
-const sqlite3 = require('sqlite3').verbose()
 
-// Caminho fixo do banco, para funcionar de qualquer pasta onde o servidor for iniciado - [Otávio Michels]
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'petshop.db')
+// Dois jeitos de guardar os dados, com as mesmas funções run/get/all para os models:
+// - TURSO_DATABASE_URL definida (site na Vercel): banco SQLite online no Turso, que não some entre os acessos
+// - sem ela (máquina local e Codespaces): arquivo petshop.db, como sempre
+const TURSO_URL = process.env.TURSO_DATABASE_URL
 
-const db = new sqlite3.Database(DB_PATH, (err) => {
-    if (err) {
-        console.error('Erro ao conectar ao banco', err.message)
-    } else {
-        console.log('Banco conectado em', DB_PATH)
+let run, get, all
+
+if (TURSO_URL) {
+    const { createClient } = require('@libsql/client')
+    const client = createClient({ url: TURSO_URL, authToken: process.env.TURSO_AUTH_TOKEN })
+    console.log('Banco conectado no Turso')
+
+    // O Turso devolve linhas "array-like"; aqui viram objetos simples { coluna: valor }, iguais aos do sqlite3
+    const objetos = (rs) => rs.rows.map((linha) => Object.fromEntries(rs.columns.map((c, i) => [c, linha[i]])))
+
+    // Erros de chave estrangeira do Turso também viram SQLITE_CONSTRAINT, que o resto do código já trata
+    const executar = async (sql, params) => {
+        try {
+            return await client.execute({ sql, args: params })
+        } catch (err) {
+            if (/constraint/i.test(String(err.message))) err.code = 'SQLITE_CONSTRAINT'
+            throw err
+        }
     }
-})
 
-// Versões com Promise do run/get/all do sqlite3, usadas pelos models com async/await - [Otávio Michels]
-function run(sql, params = []) {
-    return new Promise((resolve, reject) => {
+    run = async (sql, params = []) => {
+        const rs = await executar(sql, params)
+        return { id: rs.lastInsertRowid !== undefined ? Number(rs.lastInsertRowid) : undefined, changes: rs.rowsAffected }
+    }
+    get = async (sql, params = []) => objetos(await executar(sql, params))[0]
+    all = async (sql, params = []) => objetos(await executar(sql, params))
+} else {
+    const sqlite3 = require('sqlite3').verbose()
+
+    // Caminho fixo do banco, para funcionar de qualquer pasta onde o servidor for iniciado - [Otávio Michels]
+    // Na Vercel sem Turso só a pasta /tmp aceita escrita, e ela é apagada de tempos em tempos (modo demonstração)
+    const DB_PATH = process.env.DB_PATH || (process.env.VERCEL ? '/tmp/petshop.db' : path.join(__dirname, 'petshop.db'))
+    if (process.env.VERCEL && !process.env.DB_PATH) {
+        console.warn('Sem TURSO_DATABASE_URL: usando /tmp/petshop.db, que é apagado quando a Vercel reinicia a função')
+    }
+
+    const db = new sqlite3.Database(DB_PATH, (err) => {
+        if (err) {
+            console.error('Erro ao conectar ao banco', err.message)
+        } else {
+            console.log('Banco conectado em', DB_PATH)
+        }
+    })
+
+    // Versões com Promise do run/get/all do sqlite3, usadas pelos models com async/await - [Otávio Michels]
+    run = (sql, params = []) => new Promise((resolve, reject) => {
         db.run(sql, params, function (err) {
             if (err) return reject(err)
             resolve({ id: this.lastID, changes: this.changes })
         })
     })
-}
 
-function get(sql, params = []) {
-    return new Promise((resolve, reject) => {
+    get = (sql, params = []) => new Promise((resolve, reject) => {
         db.get(sql, params, (err, row) => (err ? reject(err) : resolve(row)))
     })
-}
 
-function all(sql, params = []) {
-    return new Promise((resolve, reject) => {
+    all = (sql, params = []) => new Promise((resolve, reject) => {
         db.all(sql, params, (err, rows) => (err ? reject(err) : resolve(rows)))
     })
 }
@@ -118,4 +150,4 @@ const ready = (async () => {
     console.log('Tabelas users, tutores, pets, servicos, produtos e agendamentos prontas')
 })()
 
-module.exports = { db, run, get, all, ready }
+module.exports = { run, get, all, ready }

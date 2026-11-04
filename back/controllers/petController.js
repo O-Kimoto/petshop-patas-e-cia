@@ -44,7 +44,13 @@ async function remover(req, res) {
     const apagou = await model.deletePet(id).catch((err) =>
         traduzirEmUso(err, 'Este pet tem agendamentos. Exclua os agendamentos antes de excluir o pet.')
     )
-    if (!apagou) throw new HttpError(404, 'Pet não encontrado')
+    if (!apagou) {
+        // Não apagou: ou não existe, ou ainda tem agendamentos
+        if (await model.findPetById(id)) {
+            throw new HttpError(409, 'Este pet tem agendamentos. Exclua os agendamentos antes de excluir o pet.')
+        }
+        throw new HttpError(404, 'Pet não encontrado')
+    }
     res.json({ message: 'Pet excluído com sucesso' })
 }
 

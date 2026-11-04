@@ -19,8 +19,12 @@ async function updateServico(id, { nome, descricao, preco }) {
     return findServicoById(id)
 }
 
+// Só apaga se o serviço não estiver em nenhum agendamento (conferido no próprio DELETE, vale também no Turso)
 async function deleteServico(id) {
-    const { changes } = await run('DELETE FROM servicos WHERE id = ?', [id])
+    const { changes } = await run(
+        'DELETE FROM servicos WHERE id = ? AND NOT EXISTS (SELECT 1 FROM agendamentos WHERE servico_id = ?)',
+        [id, id]
+    )
     return changes > 0
 }
 

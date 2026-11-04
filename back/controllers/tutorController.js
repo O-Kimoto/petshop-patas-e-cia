@@ -67,7 +67,13 @@ async function remover(req, res) {
     const apagou = await model.deleteTutor(id).catch((err) =>
         traduzirEmUso(err, 'Este tutor tem pets ou agendamentos cadastrados. Exclua-os antes de excluir o tutor.')
     )
-    if (!apagou) throw new HttpError(404, 'Tutor não encontrado')
+    if (!apagou) {
+        // Não apagou: ou não existe, ou ainda tem pets/agendamentos
+        if (await model.findTutorById(id)) {
+            throw new HttpError(409, 'Este tutor tem pets ou agendamentos cadastrados. Exclua-os antes de excluir o tutor.')
+        }
+        throw new HttpError(404, 'Tutor não encontrado')
+    }
     res.json({ message: 'Tutor excluído com sucesso' })
 }
 
