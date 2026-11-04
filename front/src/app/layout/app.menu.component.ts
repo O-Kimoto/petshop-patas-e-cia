@@ -47,7 +47,7 @@ export class AppMenuComponent implements OnInit {
             {
                 label: 'Sistema',
                 items: [
-                    { label: 'Usuários', icon: 'pi pi-fw pi-user-edit' },
+                    { label: 'Usuários', icon: 'pi pi-fw pi-user-edit', routerLink: ['/usuarios'] },
                     // Abre o Swagger numa aba nova (em produção o caminho é relativo: /api-docs)
                     { label: 'Documentação da API', icon: 'pi pi-fw pi-book', url: environment.docsUrl, target: '_blank' }
                 ]
