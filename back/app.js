@@ -43,7 +43,11 @@ var produtosRouter = require('./routes/produtos');
 var dashboardRouter = require('./routes/dashboard');
 
 // USANDO ROTAS (todas debaixo de /api para não misturar com as páginas do front) - [Otávio Michels]
-app.get('/api', (req, res) => res.json({ status: 'ok', api: 'Petshop', docs: '/api-docs' }));
+// "banco" mostra onde os dados estão, para conferir de fora se o Turso foi configurado na Vercel
+app.get('/api', (req, res) => res.json({
+  status: 'ok', api: 'Petshop', docs: '/api-docs',
+  banco: process.env.TURSO_DATABASE_URL ? 'turso' : 'arquivo local'
+}));
 app.use('/api/auth', authRouter);
 app.use('/api/tutores', tutoresRouter);
 app.use('/api/pets', petsRouter);
