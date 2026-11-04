@@ -25,7 +25,8 @@ export class AppMenuComponent implements OnInit {
             {
                 label: 'Atendimento',
                 items: [
-                    { label: 'Agendamentos', icon: 'pi pi-fw pi-calendar', routerLink: ['/agendamentos'] }
+                    { label: 'Agendamentos', icon: 'pi pi-fw pi-calendar', routerLink: ['/agendamentos'] },
+                    { label: 'Histórico', icon: 'pi pi-fw pi-history', routerLink: ['/historico'] }
                 ]
             },
             {

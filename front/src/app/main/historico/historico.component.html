@@ -1,0 +1,115 @@
+<div class="grid">
+    <div class="col-12">
+        <div class="card px-4 py-4 md:px-6 md:py-5">
+            <h5 class="mt-0 mb-3">Histórico de atendimentos</h5>
+            <div class="flex flex-column sm:flex-row flex-wrap gap-2 align-items-stretch sm:align-items-center">
+                <p-dropdown [options]="tutores" optionLabel="nome" optionValue="id" [(ngModel)]="tutorId"
+                    (onChange)="aoMudarTutor()" [filter]="true" placeholder="Escolha o tutor"
+                    styleClass="w-full sm:w-18rem"></p-dropdown>
+                <p-dropdown [options]="petsDoTutor" optionLabel="nome" optionValue="id" [(ngModel)]="petId"
+                    (onChange)="carregar()" [showClear]="true" [disabled]="!tutorId || carregandoPets"
+                    [placeholder]="tutorId ? 'Todos os pets' : 'Escolha o tutor primeiro'"
+                    styleClass="w-full sm:w-14rem">
+                    <ng-template let-pet pTemplate="item">{{ pet.nome }} <small class="text-600">· {{ pet.especie }}</small></ng-template>
+                </p-dropdown>
+            </div>
+            <p *ngIf="tutorEscolhido" class="mt-3 mb-0 text-600">
+                <i class="pi pi-phone mr-1"></i>{{ tutorEscolhido.telefone }}
+                <span *ngIf="tutorEscolhido.email" class="ml-3"><i class="pi pi-envelope mr-1"></i>{{ tutorEscolhido.email }}</span>
+            </p>
+        </div>
+    </div>
+
+    <div class="col-12" *ngIf="!tutorId">
+        <div class="card text-center text-600 py-6">
+            <i class="pi pi-history text-4xl mb-3 block"></i>
+            Escolha um tutor para ver os atendimentos dos pets dele.
+        </div>
+    </div>
+
+    <ng-container *ngIf="tutorId">
+        <!-- Quadro de resumo -->
+        <div class="col-12 sm:col-6 lg:col-3">
+            <div class="card mb-0 h-full">
+                <span class="block text-600 font-medium mb-2">Atendimentos</span>
+                <div class="text-900 font-medium text-2xl">{{ resumo.total }}</div>
+                <small class="text-600">{{ resumo.concluidos }} concluídos · {{ resumo.cancelados }} cancelados</small>
+            </div>
+        </div>
+        <div class="col-12 sm:col-6 lg:col-3">
+            <div class="card mb-0 h-full">
+                <span class="block text-600 font-medium mb-2">Total gasto</span>
+                <div class="text-900 font-medium text-2xl">{{ resumo.totalGasto | currency:'BRL' }}</div>
+                <small class="text-600">soma dos atendimentos concluídos</small>
+            </div>
+        </div>
+        <div class="col-12 sm:col-6 lg:col-3">
+            <div class="card mb-0 h-full">
+                <span class="block text-600 font-medium mb-2">Último atendimento</span>
+                <ng-container *ngIf="resumo.ultimo; else semUltimo">
+                    <div class="text-900 font-medium text-xl">{{ resumo.ultimo.data_hora | date:'dd/MM/yyyy' }}</div>
+                    <small class="text-600">{{ resumo.ultimo.servico_nome }} · {{ resumo.ultimo.pet_nome }}</small>
+                </ng-container>
+                <ng-template #semUltimo><div class="text-600">Nenhum concluído</div></ng-template>
+            </div>
+        </div>
+        <div class="col-12 sm:col-6 lg:col-3">
+            <div class="card mb-0 h-full">
+                <span class="block text-600 font-medium mb-2">Próximo agendamento</span>
+                <ng-container *ngIf="resumo.proximo; else semProximo">
+                    <div class="text-900 font-medium text-xl">{{ resumo.proximo.data_hora | date:'dd/MM/yyyy HH:mm' }}</div>
+                    <small class="text-600">{{ resumo.proximo.servico_nome }} · {{ resumo.proximo.pet_nome }}</small>
+                </ng-container>
+                <ng-template #semProximo><div class="text-600">Nada marcado</div></ng-template>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card px-4 py-4 md:px-6 md:py-5">
+                <p-table #dt [value]="atendimentos" [columns]="colunasCsv" exportFilename="historico" [loading]="carregando"
+                    responsiveLayout="stack" breakpoint="1200px" [rows]="10" [paginator]="true"
+                    [rowsPerPageOptions]="[10, 20, 50]" [showCurrentPageReport]="true"
+                    currentPageReportTemplate="{first} a {last} de {totalRecords} atendimentos"
+                    [rowHover]="true" dataKey="id">
+                    <ng-template pTemplate="caption">
+                        <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-center gap-2">
+                            <h5 class="m-0">Atendimentos</h5>
+                            <button pButton pRipple label="Exportar CSV" icon="pi pi-download"
+                                class="p-button-help p-button-outlined" (click)="dt.exportCSV()"
+                                [disabled]="!atendimentos.length"></button>
+                        </div>
+                    </ng-template>
+                    <ng-template pTemplate="header">
+                        <tr>
+                            <th pSortableColumn="data_hora">Data/Hora <p-sortIcon field="data_hora"></p-sortIcon></th>
+                            <th pSortableColumn="pet_nome">Pet <p-sortIcon field="pet_nome"></p-sortIcon></th>
+                            <th pSortableColumn="servico_nome">Serviço <p-sortIcon field="servico_nome"></p-sortIcon></th>
+                            <th pSortableColumn="servico_preco">Valor <p-sortIcon field="servico_preco"></p-sortIcon></th>
+                            <th pSortableColumn="status">Status <p-sortIcon field="status"></p-sortIcon></th>
+                            <th>Observações</th>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-a>
+                        <tr>
+                            <td>
+                                <span class="p-column-title">Data/Hora</span>
+                                <span>
+                                    <span class="font-medium">{{ a.data_hora | date:'dd/MM/yyyy' }}</span>
+                                    <span class="ml-2 text-600">{{ a.data_hora | date:'HH:mm' }}</span>
+                                </span>
+                            </td>
+                            <td><span class="p-column-title">Pet</span><span>{{ a.pet_nome }} <small class="text-600">({{ a.pet_especie }})</small></span></td>
+                            <td><span class="p-column-title">Serviço</span>{{ a.servico_nome }}</td>
+                            <td><span class="p-column-title">Valor</span>{{ a.servico_preco | currency:'BRL' }}</td>
+                            <td><span class="p-column-title">Status</span><p-tag [value]="a.status" [severity]="severidade(a.status)"></p-tag></td>
+                            <td><span class="p-column-title">Observações</span>{{ a.observacoes || '—' }}</td>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="emptymessage">
+                        <tr><td colspan="6" class="text-center p-4">Nenhum atendimento encontrado para este filtro.</td></tr>
+                    </ng-template>
+                </p-table>
+            </div>
+        </div>
+    </ng-container>
+</div>
