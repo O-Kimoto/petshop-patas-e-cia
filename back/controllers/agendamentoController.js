@@ -17,7 +17,8 @@ async function dadosDoAgendamento(body) {
     const pet = await findPetById(petId)
     if (!pet) throw new HttpError(400, 'Pet informado não existe')
     if (pet.tutor_id !== tutorId) throw new HttpError(400, 'Esse pet não pertence ao tutor escolhido')
-    if (!(await findServicoById(servicoId))) throw new HttpError(400, 'Serviço informado não existe')
+    const servico = await findServicoById(servicoId)
+    if (!servico) throw new HttpError(400, 'Serviço informado não existe')
 
     // Data e hora no formato local AAAA-MM-DDTHH:MM (o mesmo do input datetime-local) - [Otávio Michels]
     const dataHora = String(body.data_hora).slice(0, 16)
@@ -30,7 +31,8 @@ async function dadosDoAgendamento(body) {
         throw new HttpError(400, `Status deve ser um destes: ${STATUS.join(', ')}`)
     }
 
-    return { tutor_id: tutorId, pet_id: petId, servico_id: servicoId, data_hora: dataHora, status, observacoes: texto(body.observacoes) }
+    // O valor nunca vem do front: é o preço do serviço agora (no atualizar, mantém o antigo se o serviço não mudou)
+    return { tutor_id: tutorId, pet_id: petId, servico_id: servicoId, data_hora: dataHora, status, observacoes: texto(body.observacoes), valor: servico.preco }
 }
 
 // Converte o filtro (?pet= ou ?tutor=) em número; vazio vira "sem filtro" - [Gabriel França]
@@ -73,8 +75,13 @@ async function criar(req, res) {
 
 async function atualizar(req, res) {
     const id = idDaRota(req)
-    if (!(await model.findAgendamentoById(id))) throw new HttpError(404, 'Agendamento não encontrado')
+    const atual = await model.findAgendamentoById(id)
+    if (!atual) throw new HttpError(404, 'Agendamento não encontrado')
     const dados = await dadosDoAgendamento(req.body)
+    // Mudar status, data ou observação não mexe no valor combinado; só trocar o serviço pega o preço novo
+    if (dados.servico_id === atual.servico_id && atual.valor !== null) {
+        dados.valor = atual.valor
+    }
     await verificarConflito(dados, id)
     const agendamento = await model.updateAgendamento(id, dados)
     res.json({ message: 'Agendamento atualizado com sucesso', agendamento })

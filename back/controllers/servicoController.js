@@ -38,4 +38,29 @@ async function remover(req, res) {
     res.json({ message: 'Serviço excluído com sucesso' })
 }
 
-module.exports = { listar, buscar, criar, atualizar, remover }
+// Reajuste em lote: percentual positivo aumenta, negativo dá desconto; sem ids vale para todos
+async function reajustar(req, res) {
+    exigirCampos(req.body, ['percentual'])
+    const percentual = Number(req.body.percentual)
+    if (!Number.isFinite(percentual) || percentual === 0 || percentual < -90 || percentual > 200) {
+        throw new HttpError(400, 'Percentual deve ser um número diferente de zero, entre -90 e 200')
+    }
+
+    let ids = null
+    if (req.body.ids !== undefined && req.body.ids !== null) {
+        if (!Array.isArray(req.body.ids)) throw new HttpError(400, 'ids deve ser uma lista de IDs de serviço')
+        ids = req.body.ids.map(Number)
+        if (ids.some((id) => !Number.isInteger(id) || id <= 0)) throw new HttpError(400, 'ids contém um ID inválido')
+        if (!ids.length) ids = null
+    }
+
+    const alterados = await model.reajustarPrecos(1 + percentual / 100, ids)
+    if (!alterados) throw new HttpError(404, 'Nenhum serviço encontrado para reajustar')
+    const sinal = percentual > 0 ? '+' : ''
+    res.json({
+        message: `Preço de ${alterados} serviço(s) reajustado em ${sinal}${percentual}%`,
+        servicos: await model.getServicos()
+    })
+}
+
+module.exports = { listar, buscar, criar, atualizar, remover, reajustar }

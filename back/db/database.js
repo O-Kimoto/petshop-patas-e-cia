@@ -83,15 +83,29 @@ const SCHEMA = [
         status TEXT NOT NULL DEFAULT 'Agendado'
             CHECK (status IN ('Agendado', 'Confirmado', 'Concluído', 'Cancelado')),
         observacoes TEXT,
+        valor REAL,
         criado_em TEXT DEFAULT CURRENT_TIMESTAMP
     )`
 ]
+
+// valor = preço do serviço no dia em que foi agendado, para um reajuste não mudar o histórico.
+// Bancos criados antes dessa coluna ganham ela aqui, preenchida com o preço atual do serviço.
+async function migrarValorDoAgendamento() {
+    const colunas = await all('PRAGMA table_info(agendamentos)')
+    if (!colunas.some((c) => c.name === 'valor')) {
+        await run('ALTER TABLE agendamentos ADD COLUMN valor REAL')
+    }
+    await run(`UPDATE agendamentos
+               SET valor = (SELECT preco FROM servicos WHERE servicos.id = agendamentos.servico_id)
+               WHERE valor IS NULL`)
+}
 
 // Roda o schema em ordem antes de qualquer consulta; o servidor espera essa Promise para subir - [Otávio Michels]
 const ready = (async () => {
     for (const sql of SCHEMA) {
         await run(sql)
     }
+    await migrarValorDoAgendamento()
     console.log('Tabelas users, tutores, pets, servicos e agendamentos prontas')
 })()
 

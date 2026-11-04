@@ -84,7 +84,7 @@
                             <th pSortableColumn="data_hora">Data/Hora <p-sortIcon field="data_hora"></p-sortIcon></th>
                             <th pSortableColumn="pet_nome">Pet <p-sortIcon field="pet_nome"></p-sortIcon></th>
                             <th pSortableColumn="servico_nome">Serviço <p-sortIcon field="servico_nome"></p-sortIcon></th>
-                            <th pSortableColumn="servico_preco">Valor <p-sortIcon field="servico_preco"></p-sortIcon></th>
+                            <th pSortableColumn="valor">Valor <p-sortIcon field="valor"></p-sortIcon></th>
                             <th pSortableColumn="status">Status <p-sortIcon field="status"></p-sortIcon></th>
                             <th>Observações</th>
                         </tr>
@@ -100,7 +100,7 @@
                             </td>
                             <td><span class="p-column-title">Pet</span><span>{{ a.pet_nome }} <small class="text-600">({{ a.pet_especie }})</small></span></td>
                             <td><span class="p-column-title">Serviço</span>{{ a.servico_nome }}</td>
-                            <td><span class="p-column-title">Valor</span>{{ a.servico_preco | currency:'BRL' }}</td>
+                            <td><span class="p-column-title">Valor</span>{{ a.valor | currency:'BRL' }}</td>
                             <td><span class="p-column-title">Status</span><p-tag [value]="a.status" [severity]="severidade(a.status)"></p-tag></td>
                             <td><span class="p-column-title">Observações</span>{{ a.observacoes || '—' }}</td>
                         </tr>

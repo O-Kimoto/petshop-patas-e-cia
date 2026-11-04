@@ -49,6 +49,40 @@ router.post('/', asyncHandler(controller.criar))
 
 /**
  * @swagger
+ * /servicos/reajuste:
+ *   post:
+ *     summary: Reajusta os preços de uma vez (aumento ou desconto em %)
+ *     description: Sem "ids" o reajuste vale para todos os serviços. Os preços novos são arredondados em centavos.
+ *     tags: [Serviços]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ReajusteInput'
+ *     responses:
+ *       200:
+ *         description: Preços reajustados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 servicos:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Servico'
+ *       400:
+ *         $ref: '#/components/responses/Invalido'
+ *       401:
+ *         $ref: '#/components/responses/NaoAutenticado'
+ */
+router.post('/reajuste', asyncHandler(controller.reajustar))
+
+/**
+ * @swagger
  * /servicos/{id}:
  *   get:
  *     summary: Busca um serviço pelo ID

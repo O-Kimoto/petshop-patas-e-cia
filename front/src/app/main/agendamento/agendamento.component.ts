@@ -21,6 +21,8 @@ export class AgendamentoComponent implements OnInit {
     agendamento: Agendamento = {};
     // O calendário trabalha com Date; na hora de salvar vira texto AAAA-MM-DDTHH:MM - [Otávio Michels]
     dataHora: Date | null = null;
+    // Serviço que o agendamento tinha ao abrir a edição (para saber se o valor combinado continua valendo)
+    servicoOriginal?: number;
 
     tutores: Tutor[] = [];
     petsDoTutor: Pet[] = [];
@@ -42,7 +44,7 @@ export class AgendamentoComponent implements OnInit {
         { field: 'pet_nome', header: 'Pet' },
         { field: 'tutor_nome', header: 'Tutor' },
         { field: 'servico_nome', header: 'Serviço' },
-        { field: 'servico_preco', header: 'Valor' },
+        { field: 'valor', header: 'Valor' },
         { field: 'status', header: 'Status' }
     ];
 
@@ -94,6 +96,7 @@ export class AgendamentoComponent implements OnInit {
 
     abrirNovo() {
         this.agendamento = { status: 'Agendado' };
+        this.servicoOriginal = undefined;
         // Sugere amanhã às 9h para agilizar o preenchimento - [Otávio Michels]
         const amanha = new Date();
         amanha.setDate(amanha.getDate() + 1);
@@ -106,6 +109,7 @@ export class AgendamentoComponent implements OnInit {
 
     async editar(agendamento: Agendamento) {
         this.agendamento = { ...agendamento };
+        this.servicoOriginal = agendamento.servico_id;
         this.dataHora = dataHoraDaApi(agendamento.data_hora || '');
         this.submitted = false;
         this.agendamentoDialog = true;
@@ -136,6 +140,13 @@ export class AgendamentoComponent implements OnInit {
 
     get servicoEscolhido(): Servico | undefined {
         return this.servicos.find(s => s.id === this.agendamento.servico_id);
+    }
+
+    // Editando sem trocar o serviço, vale o preço combinado; com outro serviço, a API grava o preço de hoje
+    get valorNoFormulario(): number | undefined {
+        const a = this.agendamento;
+        if (a.id && a.servico_id === this.servicoOriginal && a.valor != null) return a.valor;
+        return this.servicoEscolhido?.preco;
     }
 
     async salvar() {

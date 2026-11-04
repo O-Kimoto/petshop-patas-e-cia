@@ -3,8 +3,13 @@
         <div class="card px-4 py-4 md:px-6 md:py-5">
             <p-toolbar styleClass="mb-4 gap-2">
                 <ng-template pTemplate="left">
-                    <button pButton pRipple label="Novo serviço" icon="pi pi-plus" class="p-button-success"
-                        (click)="abrirNovo()"></button>
+                    <div class="flex flex-wrap gap-2">
+                        <button pButton pRipple label="Novo serviço" icon="pi pi-plus" class="p-button-success"
+                            (click)="abrirNovo()"></button>
+                        <button pButton pRipple icon="pi pi-percentage" class="p-button-outlined"
+                            [label]="selecionados.length ? 'Reajustar ' + selecionados.length + ' selecionado(s)' : 'Reajustar preços'"
+                            [disabled]="!servicos.length" (click)="abrirReajuste()"></button>
+                    </div>
                 </ng-template>
                 <ng-template pTemplate="right">
                     <button pButton pRipple label="Exportar CSV" icon="pi pi-download"
@@ -16,7 +21,8 @@
                 responsiveLayout="stack" breakpoint="1200px" [rows]="10" [paginator]="true"
                 [rowsPerPageOptions]="[10, 20, 50]" [showCurrentPageReport]="true"
                 currentPageReportTemplate="{first} a {last} de {totalRecords} serviços"
-                [globalFilterFields]="['nome', 'descricao']" [rowHover]="true" dataKey="id">
+                [globalFilterFields]="['nome', 'descricao']" [rowHover]="true" dataKey="id"
+                [(selection)]="selecionados">
                 <ng-template pTemplate="caption">
                     <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-center gap-2">
                         <h5 class="m-0">Serviços</h5>
@@ -29,6 +35,7 @@
                 </ng-template>
                 <ng-template pTemplate="header">
                     <tr>
+                        <th style="width: 3rem"><p-tableHeaderCheckbox></p-tableHeaderCheckbox></th>
                         <th pSortableColumn="nome">Nome <p-sortIcon field="nome"></p-sortIcon></th>
                         <th>Descrição</th>
                         <th pSortableColumn="preco">Preço <p-sortIcon field="preco"></p-sortIcon></th>
@@ -37,6 +44,7 @@
                 </ng-template>
                 <ng-template pTemplate="body" let-servico>
                     <tr>
+                        <td><p-tableCheckbox [value]="servico"></p-tableCheckbox></td>
                         <td><span class="p-column-title">Nome</span><span class="font-medium">{{ servico.nome }}</span></td>
                         <td><span class="p-column-title">Descrição</span>{{ servico.descricao || '—' }}</td>
                         <td><span class="p-column-title">Preço</span>{{ servico.preco | currency:'BRL' }}</td>
@@ -52,7 +60,7 @@
                     </tr>
                 </ng-template>
                 <ng-template pTemplate="emptymessage">
-                    <tr><td colspan="4" class="text-center p-4">Nenhum serviço cadastrado ainda.</td></tr>
+                    <tr><td colspan="5" class="text-center p-4">Nenhum serviço cadastrado ainda.</td></tr>
                 </ng-template>
             </p-table>
         </div>
@@ -86,6 +94,45 @@
                     (click)="servicoDialog = false"></button>
                 <button pButton pRipple label="Salvar" icon="pi pi-check" [loading]="salvando"
                     (click)="salvar()"></button>
+            </ng-template>
+        </p-dialog>
+
+        <!-- Reajuste de preços com prévia: positivo aumenta, negativo dá desconto -->
+        <p-dialog [(visible)]="reajusteDialog" [style]="{ width: '520px' }" [breakpoints]="{ '600px': '95vw' }"
+            header="Reajustar preços" [modal]="true" class="p-fluid">
+            <ng-template pTemplate="content">
+                <p class="mt-0 text-600">
+                    {{ selecionados.length ? 'Vale para os ' + selecionados.length + ' serviço(s) selecionado(s).' : 'Vale para todos os serviços. Para reajustar só alguns, marque-os na tabela antes.' }}
+                </p>
+                <div class="field">
+                    <label for="percentual">Percentual *</label>
+                    <!-- (onInput) atualiza a prévia a cada tecla; só o ngModel esperaria o campo perder o foco -->
+                    <p-inputNumber inputId="percentual" [(ngModel)]="percentual" (onInput)="percentual = $any($event.value)"
+                        suffix="%" [min]="-90" [max]="200"
+                        [minFractionDigits]="0" [maxFractionDigits]="2" locale="pt-BR" [showButtons]="true"
+                        [ngClass]="{ 'campo-invalido': !percentualValido }"></p-inputNumber>
+                    <small class="block mt-1 text-600">Use número negativo para desconto (ex.: -10%). Limite: -90% a 200%.</small>
+                    <small class="block mt-1 text-600">Agendamentos já marcados continuam com o valor combinado.</small>
+                </div>
+                <p-table [value]="alvoDoReajuste" [scrollable]="true" scrollHeight="240px" styleClass="p-datatable-sm">
+                    <ng-template pTemplate="header">
+                        <tr><th>Serviço</th><th class="text-right">Atual</th><th class="text-right">Novo</th></tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-s>
+                        <tr>
+                            <td>{{ s.nome }}</td>
+                            <td class="text-right text-600">{{ s.preco | currency:'BRL' }}</td>
+                            <td class="text-right font-medium">{{ precoReajustado(s.preco) | currency:'BRL' }}</td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            </ng-template>
+
+            <ng-template pTemplate="footer">
+                <button pButton pRipple label="Cancelar" icon="pi pi-times" class="p-button-text"
+                    (click)="reajusteDialog = false"></button>
+                <button pButton pRipple label="Aplicar reajuste" icon="pi pi-check" [loading]="reajustando"
+                    [disabled]="!percentualValido" (click)="reajustar()"></button>
             </ng-template>
         </p-dialog>
     </div>

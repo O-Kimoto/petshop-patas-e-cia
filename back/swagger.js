@@ -85,6 +85,14 @@ const schemas = {
             { $ref: '#/components/schemas/ServicoInput' }
         ]
     },
+    ReajusteInput: {
+        type: 'object',
+        required: ['percentual'],
+        properties: {
+            percentual: { type: 'number', example: 10, description: 'Positivo aumenta, negativo dá desconto (entre -90 e 200)' },
+            ids: { type: 'array', items: { type: 'integer' }, example: [1, 2], description: 'Serviços a reajustar; vazio = todos' }
+        }
+    },
     AgendamentoInput: {
         type: 'object',
         required: ['tutor_id', 'pet_id', 'servico_id', 'data_hora'],
@@ -108,7 +116,8 @@ const schemas = {
                     pet_nome: { type: 'string', example: 'Thor' },
                     pet_especie: { type: 'string', example: 'Cachorro' },
                     servico_nome: { type: 'string', example: 'Banho' },
-                    servico_preco: { type: 'number', example: 50 }
+                    servico_preco: { type: 'number', example: 55, description: 'Preço atual do serviço' },
+                    valor: { type: 'number', example: 50, description: 'Preço do serviço quando foi agendado (não muda com reajuste)' }
                 }
             }
         ]

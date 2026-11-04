@@ -24,4 +24,16 @@ async function deleteServico(id) {
     return changes > 0
 }
 
-module.exports = { getServicos, findServicoById, createServico, updateServico, deleteServico }
+// Multiplica o preço pelo fator (1.10 = +10%) e arredonda em centavos; devolve quantos serviços mudaram
+async function reajustarPrecos(fator, ids = null) {
+    let sql = 'UPDATE servicos SET preco = ROUND(preco * ?, 2)'
+    const params = [fator]
+    if (ids && ids.length) {
+        sql += ` WHERE id IN (${ids.map(() => '?').join(', ')})`
+        params.push(...ids)
+    }
+    const { changes } = await run(sql, params)
+    return changes
+}
+
+module.exports = { getServicos, findServicoById, createServico, updateServico, deleteServico, reajustarPrecos }

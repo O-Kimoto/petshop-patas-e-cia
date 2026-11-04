@@ -40,13 +40,13 @@ async function seed() {
             'INSERT INTO pets (nome, especie, raca, sexo, tutor_id) VALUES (?, ?, ?, ?, ?)',
             ['Mia', 'Gato', 'Siamês', 'F', tutor.id]
         )
-        const banho = await get("SELECT id FROM servicos WHERE nome = 'Banho'")
+        const banho = await get("SELECT id, preco FROM servicos WHERE nome = 'Banho'")
         if (banho) {
             const amanha = new Date(Date.now() + 24 * 60 * 60 * 1000)
             const dataHora = amanha.toISOString().slice(0, 10) + 'T10:00'
             await run(
-                'INSERT INTO agendamentos (tutor_id, pet_id, servico_id, data_hora, status) VALUES (?, ?, ?, ?, ?)',
-                [tutor.id, pet.id, banho.id, dataHora, 'Agendado']
+                'INSERT INTO agendamentos (tutor_id, pet_id, servico_id, data_hora, status, valor) VALUES (?, ?, ?, ?, ?, ?)',
+                [tutor.id, pet.id, banho.id, dataHora, 'Agendado', banho.preco]
             )
         }
     }

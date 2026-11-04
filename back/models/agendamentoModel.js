@@ -43,20 +43,20 @@ function findAgendamentoById(id) {
     return get(`${SELECT_AGENDAMENTO} WHERE a.id = ?`, [id])
 }
 
-async function createAgendamento({ tutor_id, pet_id, servico_id, data_hora, status, observacoes }) {
+async function createAgendamento({ tutor_id, pet_id, servico_id, data_hora, status, observacoes, valor }) {
     const { id } = await run(
-        `INSERT INTO agendamentos (tutor_id, pet_id, servico_id, data_hora, status, observacoes)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [tutor_id, pet_id, servico_id, data_hora, status, observacoes]
+        `INSERT INTO agendamentos (tutor_id, pet_id, servico_id, data_hora, status, observacoes, valor)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [tutor_id, pet_id, servico_id, data_hora, status, observacoes, valor]
     )
     return findAgendamentoById(id)
 }
 
-async function updateAgendamento(id, { tutor_id, pet_id, servico_id, data_hora, status, observacoes }) {
+async function updateAgendamento(id, { tutor_id, pet_id, servico_id, data_hora, status, observacoes, valor }) {
     await run(
-        `UPDATE agendamentos SET tutor_id = ?, pet_id = ?, servico_id = ?, data_hora = ?, status = ?, observacoes = ?
+        `UPDATE agendamentos SET tutor_id = ?, pet_id = ?, servico_id = ?, data_hora = ?, status = ?, observacoes = ?, valor = ?
          WHERE id = ?`,
-        [tutor_id, pet_id, servico_id, data_hora, status, observacoes, id]
+        [tutor_id, pet_id, servico_id, data_hora, status, observacoes, valor, id]
     )
     return findAgendamentoById(id)
 }

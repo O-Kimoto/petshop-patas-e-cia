@@ -40,7 +40,7 @@ export class HistoricoComponent implements OnInit {
         { field: 'data_hora', header: 'Data/Hora' },
         { field: 'pet_nome', header: 'Pet' },
         { field: 'servico_nome', header: 'Serviço' },
-        { field: 'servico_preco', header: 'Valor' },
+        { field: 'valor', header: 'Valor' },
         { field: 'status', header: 'Status' },
         { field: 'observacoes', header: 'Observações' }
     ];
@@ -111,7 +111,8 @@ export class HistoricoComponent implements OnInit {
             total: this.atendimentos.length,
             concluidos: concluidos.length,
             cancelados: this.atendimentos.filter(a => a.status === 'Cancelado').length,
-            totalGasto: concluidos.reduce((soma, a) => soma + (a.servico_preco || 0), 0),
+            // valor = preço na época do agendamento, então reajustes não mudam o que já foi gasto
+            totalGasto: concluidos.reduce((soma, a) => soma + (a.valor ?? a.servico_preco ?? 0), 0),
             ultimo: concluidos[0],
             proximo: emAberto[0]
         };

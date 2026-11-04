@@ -14,4 +14,6 @@ export interface Agendamento {
     pet_especie?: string;
     servico_nome?: string;
     servico_preco?: number;
+    // Preço do serviço quando foi agendado; não muda com reajuste (servico_preco é o preço de hoje)
+    valor?: number;
 }

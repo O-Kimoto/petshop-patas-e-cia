@@ -17,6 +17,12 @@ export class ServicoComponent implements OnInit {
     carregando = false;
     salvando = false;
 
+    // Reajuste de preços: vale para os serviços marcados na tabela ou, se nenhum estiver marcado, para todos
+    selecionados: Servico[] = [];
+    reajusteDialog = false;
+    percentual: number | null = 10;
+    reajustando = false;
+
     colunasCsv = [
         { field: 'nome', header: 'Nome' },
         { field: 'descricao', header: 'Descrição' },
@@ -83,6 +89,7 @@ export class ServicoComponent implements OnInit {
             accept: async () => {
                 try {
                     await this.servicoService.excluir(servico.id!);
+                    this.selecionados = this.selecionados.filter(s => s.id !== servico.id);
                     this.messageService.add({ severity: 'success', summary: 'Pronto', detail: 'Serviço excluído' });
                     await this.carregar();
                 } catch (err) {
@@ -90,6 +97,42 @@ export class ServicoComponent implements OnInit {
                 }
             }
         });
+    }
+
+    abrirReajuste() {
+        this.percentual = 10;
+        this.reajusteDialog = true;
+    }
+
+    get alvoDoReajuste(): Servico[] {
+        return this.selecionados.length ? this.selecionados : this.servicos;
+    }
+
+    // Mesmo cálculo da API (arredonda em centavos), para mostrar a prévia antes de confirmar
+    precoReajustado(preco?: number): number {
+        const fator = 1 + (this.percentual || 0) / 100;
+        return Math.round((preco || 0) * fator * 100) / 100;
+    }
+
+    get percentualValido(): boolean {
+        return this.percentual !== null && this.percentual !== 0 && this.percentual >= -90 && this.percentual <= 200;
+    }
+
+    async reajustar() {
+        if (!this.percentualValido) return;
+        this.reajustando = true;
+        try {
+            const ids = this.selecionados.map(s => s.id!);
+            const res = await this.servicoService.reajustar(this.percentual!, ids);
+            this.servicos = res.servicos;
+            this.selecionados = [];
+            this.reajusteDialog = false;
+            this.messageService.add({ severity: 'success', summary: 'Pronto', detail: res.message });
+        } catch (err) {
+            this.erro(err);
+        } finally {
+            this.reajustando = false;
+        }
     }
 
     onGlobalFilter(table: Table, event: Event) {

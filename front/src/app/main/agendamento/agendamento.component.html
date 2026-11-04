@@ -61,7 +61,7 @@
                         <td><span class="p-column-title">Tutor</span>{{ a.tutor_nome }}</td>
                         <td>
                             <span class="p-column-title">Serviço</span>
-                            <span>{{ a.servico_nome }} <small class="text-600">{{ a.servico_preco | currency:'BRL' }}</small></span>
+                            <span>{{ a.servico_nome }} <small class="text-600">{{ a.valor | currency:'BRL' }}</small></span>
                         </td>
                         <td><span class="p-column-title">Status</span><p-tag [value]="a.status" [severity]="severidade(a.status)"></p-tag></td>
                         <td>
@@ -120,8 +120,8 @@
                         </ng-template>
                     </p-dropdown>
                     <small class="p-error" *ngIf="submitted && !agendamento.servico_id">Serviço é obrigatório</small>
-                    <small class="block mt-1 text-600" *ngIf="servicoEscolhido">
-                        Valor: {{ servicoEscolhido.preco | currency:'BRL' }}
+                    <small class="block mt-1 text-600" *ngIf="valorNoFormulario != null">
+                        Valor: {{ valorNoFormulario | currency:'BRL' }}
                     </small>
                 </div>
                 <div class="formgrid grid">
