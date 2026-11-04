@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
-const { findUserByUsername, findUserById } = require('../models/userModel')
+const { findUserByUsername, findUserById, createUser } = require('../models/userModel')
 const { HttpError, exigirCampos, texto } = require('./helpers')
 
 // Gera o token JWT com id e usuário; a validade vem do .env (padrão 1 dia) - [Otávio Michels]
@@ -10,6 +10,27 @@ function gerarToken(user) {
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
     )
+}
+
+// Cadastro público de usuário (tela "Criar conta" do login) - [Otávio Michels]
+// Com CADASTRO_PUBLICO=nao no .env, só um usuário logado cria contas (pela tela de Usuários)
+async function register(req, res) {
+    if (String(process.env.CADASTRO_PUBLICO || 'sim').trim().toLowerCase() === 'nao') {
+        throw new HttpError(403, 'O cadastro de novas contas está desligado. Peça um acesso ao administrador.')
+    }
+    exigirCampos(req.body, ['username', 'password'])
+    const username = texto(req.body.username)
+    if (String(req.body.password).length < 6) {
+        throw new HttpError(400, 'A senha precisa ter pelo menos 6 caracteres')
+    }
+
+    const existente = await findUserByUsername(username)
+    if (existente) {
+        throw new HttpError(409, 'Usuário já existe')
+    }
+
+    const user = await createUser({ nome: texto(req.body.nome) || username, username, password: req.body.password })
+    res.status(201).json({ message: 'Usuário criado com sucesso', user })
 }
 
 // Login: confere a senha com bcrypt e devolve o token JWT - [Otávio Michels]
@@ -32,4 +53,4 @@ async function me(req, res) {
     res.json({ user })
 }
 
-module.exports = { login, me }
+module.exports = { register, login, me }

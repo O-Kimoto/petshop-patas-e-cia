@@ -20,6 +20,15 @@ const schemas = {
             password: { type: 'string', example: 'admin123' }
         }
     },
+    UsuarioInput: {
+        type: 'object',
+        required: ['nome', 'username'],
+        properties: {
+            nome: { type: 'string', example: 'Gabriel França' },
+            username: { type: 'string', example: 'gabriel' },
+            password: { type: 'string', example: 'senha123', description: 'Obrigatória ao criar; opcional ao editar' }
+        }
+    },
     Usuario: {
         type: 'object',
         properties: {
@@ -182,7 +191,7 @@ const options = {
         servers: [{ url: '/api', description: 'Este servidor' }],
         // Ordem dos grupos na página do Swagger - [Otávio Michels]
         tags: [
-            { name: 'Auth', description: 'Login e usuário logado' },
+            { name: 'Auth', description: 'Login, cadastro e usuário logado' },
             { name: 'Agendamentos', description: 'Tutor + pet + serviço + data/hora + status' },
             { name: 'Tutores', description: 'Donos dos pets' },
             { name: 'Pets', description: 'Animais, ligados a um tutor (tutor_id)' },

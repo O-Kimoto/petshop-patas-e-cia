@@ -1,8 +1,34 @@
 const express = require('express')
 const authenticateToken = require('../middleware/auth')
 const { asyncHandler } = require('../controllers/helpers')
-const { login, me } = require('../controllers/authController')
+const { register, login, me } = require('../controllers/authController')
 const router = express.Router()
+
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Cria uma conta de usuário (rota pública)
+ *     description: Pode ser desligada com CADASTRO_PUBLICO=nao no back/.env.
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UsuarioInput'
+ *     responses:
+ *       201:
+ *         description: Usuário criado com sucesso
+ *       400:
+ *         $ref: '#/components/responses/Invalido'
+ *       403:
+ *         description: Cadastro público desligado
+ *       409:
+ *         description: Usuário já existe
+ */
+router.post('/register', asyncHandler(register))
 
 /**
  * @swagger
