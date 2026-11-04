@@ -15,7 +15,8 @@ import { AuthGuard } from './main/middleware/guards/auth.guard';
                 // Nesta parte o sistema tem só a tela de agendamentos; o endereço inicial já abre ela - [Otávio Michels]
                 children: [
                     { path: '', pathMatch: 'full', redirectTo: 'agendamentos' },
-                    { path: 'agendamentos', loadChildren: () => import('./main/agendamento/agendamento.module').then(m => m.AgendamentoModule) }
+                    { path: 'agendamentos', loadChildren: () => import('./main/agendamento/agendamento.module').then(m => m.AgendamentoModule) },
+                    { path: 'servicos', loadChildren: () => import('./main/servico/servico.module').then(m => m.ServicoModule) }
                 ]
             },
             { path: 'auth', loadChildren: () => import('./main/middleware/auth/auth.module').then(m => m.AuthModule) },
