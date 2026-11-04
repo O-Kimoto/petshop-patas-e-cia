@@ -186,7 +186,8 @@ const options = {
             { name: 'Tutores', description: 'Donos dos pets' },
             { name: 'Pets', description: 'Animais, ligados a um tutor (tutor_id)' },
             { name: 'Serviços', description: 'Banho, tosa, consulta, vacinação...' },
-            { name: 'Produtos', description: 'Ração, brinquedos, medicamentos, com estoque' }
+            { name: 'Produtos', description: 'Ração, brinquedos, medicamentos, com estoque' },
+            { name: 'Dashboard', description: 'Resumo do painel inicial' }
         ],
         components: {
             securitySchemes: {
