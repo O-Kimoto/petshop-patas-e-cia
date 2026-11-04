@@ -17,7 +17,8 @@ import { AuthGuard } from './main/middleware/guards/auth.guard';
                     { path: '', pathMatch: 'full', redirectTo: 'agendamentos' },
                     { path: 'agendamentos', loadChildren: () => import('./main/agendamento/agendamento.module').then(m => m.AgendamentoModule) },
                     { path: 'servicos', loadChildren: () => import('./main/servico/servico.module').then(m => m.ServicoModule) },
-                    { path: 'historico', loadChildren: () => import('./main/historico/historico.module').then(m => m.HistoricoModule) }
+                    { path: 'historico', loadChildren: () => import('./main/historico/historico.module').then(m => m.HistoricoModule) },
+                    { path: 'pets', loadChildren: () => import('./main/pet/pet.module').then(m => m.PetModule) }
                 ]
             },
             { path: 'auth', loadChildren: () => import('./main/middleware/auth/auth.module').then(m => m.AuthModule) },
