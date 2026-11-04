@@ -14,13 +14,12 @@ export class AppMenuComponent implements OnInit {
     constructor(public layoutService: LayoutService) { }
 
     // Menu lateral do petshop, agrupado por assunto - [Otávio Michels]
-    // Itens sem routerLink ainda não têm tela: ficam no layout, mas sem link
     ngOnInit() {
         this.model = [
             {
                 label: 'Início',
                 items: [
-                    { label: 'Painel', icon: 'pi pi-fw pi-home' }
+                    { label: 'Painel', icon: 'pi pi-fw pi-home', routerLink: ['/'] }
                 ]
             },
             {

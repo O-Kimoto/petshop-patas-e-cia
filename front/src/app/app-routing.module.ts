@@ -12,9 +12,9 @@ import { AuthGuard } from './main/middleware/guards/auth.guard';
                 path: '', component: AppLayoutComponent,
                 canActivate: [AuthGuard],
                 canActivateChild: [AuthGuard],
-                // Nesta parte o sistema tem só a tela de agendamentos; o endereço inicial já abre ela - [Otávio Michels]
+                // O endereço inicial abre o painel com o resumo do petshop
                 children: [
-                    { path: '', pathMatch: 'full', redirectTo: 'agendamentos' },
+                    { path: '', pathMatch: 'full', loadChildren: () => import('./main/dashboard/dashboard.module').then(m => m.DashboardModule) },
                     { path: 'agendamentos', loadChildren: () => import('./main/agendamento/agendamento.module').then(m => m.AgendamentoModule) },
                     { path: 'servicos', loadChildren: () => import('./main/servico/servico.module').then(m => m.ServicoModule) },
                     { path: 'historico', loadChildren: () => import('./main/historico/historico.module').then(m => m.HistoricoModule) },
