@@ -96,7 +96,8 @@ back/
   db/database.js       conexão com o banco (arquivo SQLite local ou Turso) e criação das tabelas
   db/seed.js           usuário admin e dados de exemplo, criados quando o banco está vazio
   swagger.json         documentação da API mostrada em /api-docs
-docs/guia-do-back-end.pdf  guia para a apresentação: login com JWT, F12 e como o back conversa com o front
+docs/guia-do-back-end.pdf          guia do back-end: código, login com JWT, F12 e como o back conversa com o front
+docs/roteiro-da-apresentacao.pdf   roteiro da apresentação: onde ver o back, o que falar, demonstração no F12
 front/src/app/
   layout/              menu, barra superior e tema
   main/                uma pasta por tela (agendamento, historico, tutor, pet, servico, produto, usuario, dashboard)
