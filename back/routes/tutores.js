@@ -1,120 +1,102 @@
+// Tutores (os donos dos pets): /api/tutores
 const express = require('express')
-const authenticateToken = require('../middleware/auth')
-const { asyncHandler } = require('../controllers/helpers')
-const controller = require('../controllers/tutorController')
+const db = require('../db/database')
+
 const router = express.Router()
 
-// Todas as rotas de tutores exigem token JWT - [Otávio Michels]
-router.use(authenticateToken)
+const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']
 
-/**
- * @swagger
- * /tutores:
- *   get:
- *     summary: Lista os tutores com a quantidade de pets de cada um
- *     tags: [Tutores]
- *     responses:
- *       200:
- *         description: Lista de tutores
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 tutores:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Tutor'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *   post:
- *     summary: Cadastra um tutor
- *     tags: [Tutores]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/TutorInput'
- *     responses:
- *       201:
- *         description: Tutor criado
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 tutor:
- *                   $ref: '#/components/schemas/Tutor'
- *       400:
- *         $ref: '#/components/responses/Invalido'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- */
-router.get('/', asyncHandler(controller.listar))
-router.post('/', asyncHandler(controller.criar))
+// Confere os dados que vieram do formulário. Devolve a mensagem de erro, ou null se estiver tudo certo.
+function validar(tutor) {
+    if (!tutor.nome || !tutor.telefone) return 'Nome e telefone são obrigatórios'
+    const digitos = String(tutor.telefone).replace(/\D/g, '') // só os números do telefone
+    if (digitos.length < 10 || digitos.length > 11) return 'Telefone deve ter DDD e número (10 ou 11 dígitos)'
+    if (tutor.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tutor.email)) return 'E-mail inválido'
+    if (tutor.uf && !UFS.includes(String(tutor.uf).toUpperCase())) return 'UF inválida'
+    if (tutor.cep && String(tutor.cep).replace(/\D/g, '').length !== 8) return 'CEP deve ter 8 dígitos'
+    return null
+}
 
-/**
- * @swagger
- * /tutores/{id}:
- *   get:
- *     summary: Busca um tutor pelo ID
- *     tags: [Tutores]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     responses:
- *       200:
- *         description: Tutor encontrado
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 tutor:
- *                   $ref: '#/components/schemas/Tutor'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- *   put:
- *     summary: Atualiza um tutor
- *     tags: [Tutores]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/TutorInput'
- *     responses:
- *       200:
- *         description: Tutor atualizado
- *       400:
- *         $ref: '#/components/responses/Invalido'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- *   delete:
- *     summary: Exclui um tutor (só se ele não tiver pets nem agendamentos)
- *     tags: [Tutores]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     responses:
- *       200:
- *         description: Tutor excluído
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- *       409:
- *         $ref: '#/components/responses/EmUso'
- */
-router.get('/:id', asyncHandler(controller.buscar))
-router.put('/:id', asyncHandler(controller.atualizar))
-router.delete('/:id', asyncHandler(controller.remover))
+// Valores na mesma ordem das colunas do INSERT e do UPDATE (campo vazio vira null)
+function valores(tutor) {
+    const cep = tutor.cep ? String(tutor.cep).replace(/\D/g, '').replace(/(\d{5})(\d{3})/, '$1-$2') : null // 01001000 -> 01001-000
+    const uf = tutor.uf ? String(tutor.uf).toUpperCase() : null
+    return [tutor.nome, tutor.email || null, tutor.telefone, cep, tutor.logradouro || null, tutor.numero || null,
+        tutor.complemento || null, tutor.bairro || null, tutor.cidade || null, uf]
+}
+
+// GET /api/tutores: lista os tutores com a quantidade de pets de cada um
+router.get('/', async (req, res) => {
+    const tutores = await db.all(`
+        SELECT t.*, COUNT(p.id) AS total_pets
+        FROM tutores t
+        LEFT JOIN pets p ON p.tutor_id = t.id
+        GROUP BY t.id
+        ORDER BY t.nome
+    `)
+    res.json({ tutores })
+})
+
+// GET /api/tutores/1: um tutor
+router.get('/:id', async (req, res) => {
+    const tutor = await db.get('SELECT * FROM tutores WHERE id = ?', [req.params.id])
+    if (!tutor) {
+        return res.status(404).json({ message: 'Tutor não encontrado' })
+    }
+    res.json({ tutor })
+})
+
+// POST /api/tutores: cadastra
+router.post('/', async (req, res) => {
+    const erro = validar(req.body)
+    if (erro) {
+        return res.status(400).json({ message: erro })
+    }
+
+    const { id } = await db.run(
+        `INSERT INTO tutores (nome, email, telefone, cep, logradouro, numero, complemento, bairro, cidade, uf)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        valores(req.body)
+    )
+    const tutor = await db.get('SELECT * FROM tutores WHERE id = ?', [id])
+    res.status(201).json({ message: 'Tutor criado com sucesso', tutor })
+})
+
+// PUT /api/tutores/1: edita
+router.put('/:id', async (req, res) => {
+    const id = req.params.id
+    if (!(await db.get('SELECT id FROM tutores WHERE id = ?', [id]))) {
+        return res.status(404).json({ message: 'Tutor não encontrado' })
+    }
+    const erro = validar(req.body)
+    if (erro) {
+        return res.status(400).json({ message: erro })
+    }
+
+    await db.run(
+        `UPDATE tutores SET nome = ?, email = ?, telefone = ?, cep = ?, logradouro = ?, numero = ?,
+         complemento = ?, bairro = ?, cidade = ?, uf = ? WHERE id = ?`,
+        [...valores(req.body), id]
+    )
+    const tutor = await db.get('SELECT * FROM tutores WHERE id = ?', [id])
+    res.json({ message: 'Tutor atualizado com sucesso', tutor })
+})
+
+// DELETE /api/tutores/1: exclui, se o tutor não tiver pets nem agendamentos
+router.delete('/:id', async (req, res) => {
+    const id = req.params.id
+    if (!(await db.get('SELECT id FROM tutores WHERE id = ?', [id]))) {
+        return res.status(404).json({ message: 'Tutor não encontrado' })
+    }
+
+    const temPet = await db.get('SELECT id FROM pets WHERE tutor_id = ?', [id])
+    const temAgendamento = await db.get('SELECT id FROM agendamentos WHERE tutor_id = ?', [id])
+    if (temPet || temAgendamento) {
+        return res.status(409).json({ message: 'Este tutor tem pets ou agendamentos cadastrados. Exclua-os antes de excluir o tutor.' })
+    }
+
+    await db.run('DELETE FROM tutores WHERE id = ?', [id])
+    res.json({ message: 'Tutor excluído com sucesso' })
+})
 
 module.exports = router

@@ -1,106 +1,98 @@
+// Usuários que acessam o sistema: /api/users
 const express = require('express')
-const authenticateToken = require('../middleware/auth')
-const { asyncHandler } = require('../controllers/helpers')
-const controller = require('../controllers/userController')
+const bcrypt = require('bcryptjs')
+const db = require('../db/database')
+
 const router = express.Router()
 
-// Todas as rotas de usuários exigem token JWT - [Otávio Michels]
-router.use(authenticateToken)
+// Campos que podem ir para o front: a senha (hash) nunca sai do banco
+const CAMPOS = 'id, nome, username, criado_em'
 
-/**
- * @swagger
- * /users:
- *   get:
- *     summary: Lista os usuários do sistema (sem as senhas)
- *     tags: [Usuários]
- *     responses:
- *       200:
- *         description: Lista de usuários
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 users:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Usuario'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *   post:
- *     summary: Cria um usuário
- *     tags: [Usuários]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UsuarioInput'
- *     responses:
- *       201:
- *         description: Usuário criado
- *       400:
- *         $ref: '#/components/responses/Invalido'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       409:
- *         description: Login já usado por outro usuário
- */
-router.get('/', asyncHandler(controller.listar))
-router.post('/', asyncHandler(controller.criar))
+// Confere os dados do formulário (na edição, a senha é opcional). Devolve a mensagem de erro, ou null.
+function validar(dados) {
+    if (!dados.nome || !dados.username) return 'Nome e usuário são obrigatórios'
+    if (dados.password && dados.password.length < 6) return 'A senha precisa ter pelo menos 6 caracteres'
+    return null
+}
 
-/**
- * @swagger
- * /users/{id}:
- *   get:
- *     summary: Busca um usuário pelo ID
- *     tags: [Usuários]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     responses:
- *       200:
- *         description: Usuário encontrado
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- *   put:
- *     summary: Atualiza um usuário (envie password só se quiser trocar a senha)
- *     tags: [Usuários]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UsuarioInput'
- *     responses:
- *       200:
- *         description: Usuário atualizado
- *       400:
- *         $ref: '#/components/responses/Invalido'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- *   delete:
- *     summary: Exclui um usuário (não é possível excluir o próprio)
- *     tags: [Usuários]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     responses:
- *       200:
- *         description: Usuário excluído
- *       400:
- *         description: Tentativa de excluir o próprio usuário
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- */
-router.get('/:id', asyncHandler(controller.buscar))
-router.put('/:id', asyncHandler(controller.atualizar))
-router.delete('/:id', asyncHandler(controller.remover))
+// GET /api/users: lista
+router.get('/', async (req, res) => {
+    const users = await db.all(`SELECT ${CAMPOS} FROM users ORDER BY nome, username`)
+    res.json({ users })
+})
+
+// GET /api/users/1: um usuário
+router.get('/:id', async (req, res) => {
+    const user = await db.get(`SELECT ${CAMPOS} FROM users WHERE id = ?`, [req.params.id])
+    if (!user) {
+        return res.status(404).json({ message: 'Usuário não encontrado' })
+    }
+    res.json({ user })
+})
+
+// POST /api/users: cadastra (a senha é obrigatória)
+router.post('/', async (req, res) => {
+    const nome = req.body.nome
+    const username = String(req.body.username || '').trim()
+    const password = String(req.body.password || '')
+
+    if (!password) {
+        return res.status(400).json({ message: 'A senha é obrigatória' })
+    }
+    const erro = validar({ nome, username, password })
+    if (erro) {
+        return res.status(400).json({ message: erro })
+    }
+    if (await db.get('SELECT id FROM users WHERE username = ?', [username])) {
+        return res.status(409).json({ message: 'Já existe um usuário com esse login' })
+    }
+
+    const hash = await bcrypt.hash(password, 10) // guarda só o hash, nunca a senha
+    const { id } = await db.run('INSERT INTO users (nome, username, password) VALUES (?, ?, ?)', [nome, username, hash])
+    const user = await db.get(`SELECT ${CAMPOS} FROM users WHERE id = ?`, [id])
+    res.status(201).json({ message: 'Usuário criado com sucesso', user })
+})
+
+// PUT /api/users/1: edita (a senha só muda se uma nova for enviada)
+router.put('/:id', async (req, res) => {
+    const id = Number(req.params.id)
+    if (!(await db.get('SELECT id FROM users WHERE id = ?', [id]))) {
+        return res.status(404).json({ message: 'Usuário não encontrado' })
+    }
+
+    const nome = req.body.nome
+    const username = String(req.body.username || '').trim()
+    const password = String(req.body.password || '')
+    const erro = validar({ nome, username, password })
+    if (erro) {
+        return res.status(400).json({ message: erro })
+    }
+    if (await db.get('SELECT id FROM users WHERE username = ? AND id <> ?', [username, id])) {
+        return res.status(409).json({ message: 'Já existe um usuário com esse login' })
+    }
+
+    if (password) {
+        const hash = await bcrypt.hash(password, 10)
+        await db.run('UPDATE users SET nome = ?, username = ?, password = ? WHERE id = ?', [nome, username, hash, id])
+    } else {
+        await db.run('UPDATE users SET nome = ?, username = ? WHERE id = ?', [nome, username, id])
+    }
+    const user = await db.get(`SELECT ${CAMPOS} FROM users WHERE id = ?`, [id])
+    res.json({ message: 'Usuário atualizado com sucesso', user })
+})
+
+// DELETE /api/users/1: exclui. Ninguém pode excluir a si mesmo (req.user é quem está logado).
+router.delete('/:id', async (req, res) => {
+    const id = Number(req.params.id)
+    if (id === req.user.id) {
+        return res.status(400).json({ message: 'Você não pode excluir o próprio usuário' })
+    }
+
+    const { changes } = await db.run('DELETE FROM users WHERE id = ?', [id])
+    if (changes === 0) {
+        return res.status(404).json({ message: 'Usuário não encontrado' })
+    }
+    res.json({ message: 'Usuário excluído com sucesso' })
+})
 
 module.exports = router

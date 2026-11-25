@@ -39,8 +39,8 @@ administrador aleatórias e gera o build do front. Depois do `npm start`, tudo f
 - Documentação da API (Swagger): http://localhost:3000/api-docs
 
 Login inicial: o usuário `admin` com a senha que o `setup` mostrou no terminal. Ela fica guardada em
-`back/.env` (`ADMIN_PASSWORD`). Esse usuário só é criado quando o banco está vazio; se o banco foi criado
-antes, com a senha antiga `admin123`, a API avisa no terminal até ela ser trocada na tela de Usuários.
+`back/.env` (`ADMIN_PASSWORD`). Esse usuário só é criado quando o banco está vazio; para trocar a senha
+depois, use a tela de Usuários.
 
 No GitHub Codespaces o `setup` roda sozinho ao criar o ambiente e o servidor liga sozinho na porta 3000.
 Essa porta fica **pública** (qualquer pessoa com o link abre o sistema), por isso o "Criar conta" vem
@@ -89,12 +89,13 @@ até sobe, mas guarda os dados em `/tmp`, que a Vercel apaga de tempos em tempos
 api/index.js           entrada da API quando o site roda na Vercel
 vercel.json            como a Vercel monta o site (build do front + função da API)
 back/
-  bin/www              sobe o servidor depois de preparar o banco e os dados iniciais
-  app.js               rotas, CORS, Swagger e tratamento de erros
-  db/                  conexão (arquivo SQLite local ou Turso), criação das tabelas e dados de exemplo (seed)
-  routes/              rotas REST (com a documentação do Swagger em comentários)
-  controllers/         validações e regras de cada recurso
-  models/              consultas SQL
+  server.js            liga o servidor (porta 3000) depois de preparar o banco
+  app.js               Express: CORS, JSON, Swagger, quais rotas exigem login e resposta de erro
+  middleware/auth.js   confere o token JWT (header Authorization: Bearer ...) das rotas protegidas
+  routes/              um arquivo por assunto (tutores, pets...), com a rota, a validação e o SQL juntos
+  db/database.js       conexão com o banco (arquivo SQLite local ou Turso) e criação das tabelas
+  db/seed.js           usuário admin e dados de exemplo, criados quando o banco está vazio
+  swagger.json         documentação da API mostrada em /api-docs
 front/src/app/
   layout/              menu, barra superior e tema
   main/                uma pasta por tela (agendamento, historico, tutor, pet, servico, produto, usuario, dashboard)

@@ -1,0 +1,1832 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API Petshop",
+    "version": "1.0.0",
+    "description": "API REST do sistema de petshop: tutores, pets, serviços (com reajuste de preços), produtos (com estoque), agendamentos, usuários e o resumo do painel. Faça login em **POST /auth/login**, copie o token e clique em **Authorize** para testar as rotas protegidas."
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Este servidor"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Login, cadastro e usuário logado"
+    },
+    {
+      "name": "Agendamentos",
+      "description": "Tutor + pet + serviço + data/hora + status"
+    },
+    {
+      "name": "Tutores",
+      "description": "Donos dos pets"
+    },
+    {
+      "name": "Pets",
+      "description": "Animais, ligados a um tutor (tutor_id)"
+    },
+    {
+      "name": "Serviços",
+      "description": "Banho, tosa, consulta, vacinação..."
+    },
+    {
+      "name": "Produtos",
+      "description": "Ração, brinquedos, medicamentos, com estoque"
+    },
+    {
+      "name": "Usuários",
+      "description": "Quem acessa o sistema"
+    },
+    {
+      "name": "Dashboard",
+      "description": "Resumo do painel inicial"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "parameters": {
+      "IdPath": {
+        "in": "path",
+        "name": "id",
+        "required": true,
+        "description": "ID do registro",
+        "schema": {
+          "type": "integer"
+        }
+      }
+    },
+    "schemas": {
+      "Mensagem": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Erro": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Campos obrigatórios não preenchidos: nome"
+          }
+        }
+      },
+      "Credenciais": {
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "example": "admin"
+          },
+          "password": {
+            "type": "string",
+            "example": "admin123"
+          }
+        }
+      },
+      "UsuarioInput": {
+        "type": "object",
+        "required": [
+          "nome",
+          "username"
+        ],
+        "properties": {
+          "nome": {
+            "type": "string",
+            "example": "Gabriel França"
+          },
+          "username": {
+            "type": "string",
+            "example": "gabriel"
+          },
+          "password": {
+            "type": "string",
+            "example": "senha123",
+            "description": "Obrigatória ao criar; opcional ao editar"
+          }
+        }
+      },
+      "Usuario": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "nome": {
+            "type": "string",
+            "example": "Gabriel França"
+          },
+          "username": {
+            "type": "string",
+            "example": "gabriel"
+          },
+          "criado_em": {
+            "type": "string",
+            "example": "2026-10-29 03:00:00"
+          }
+        }
+      },
+      "TutorInput": {
+        "type": "object",
+        "required": [
+          "nome",
+          "telefone"
+        ],
+        "properties": {
+          "nome": {
+            "type": "string",
+            "example": "Maria Silva"
+          },
+          "email": {
+            "type": "string",
+            "example": "maria.silva@email.com"
+          },
+          "telefone": {
+            "type": "string",
+            "example": "(81) 99999-1234"
+          },
+          "cep": {
+            "type": "string",
+            "example": "50030-230"
+          },
+          "logradouro": {
+            "type": "string",
+            "example": "Rua do Bom Jesus"
+          },
+          "numero": {
+            "type": "string",
+            "example": "125"
+          },
+          "complemento": {
+            "type": "string",
+            "example": "Apto 201"
+          },
+          "bairro": {
+            "type": "string",
+            "example": "Recife"
+          },
+          "cidade": {
+            "type": "string",
+            "example": "Recife"
+          },
+          "uf": {
+            "type": "string",
+            "example": "PE"
+          }
+        }
+      },
+      "Tutor": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "example": 1
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/TutorInput"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "total_pets": {
+                "type": "integer",
+                "example": 2
+              }
+            }
+          }
+        ]
+      },
+      "PetInput": {
+        "type": "object",
+        "required": [
+          "nome",
+          "especie",
+          "sexo",
+          "tutor_id"
+        ],
+        "properties": {
+          "nome": {
+            "type": "string",
+            "example": "Thor"
+          },
+          "especie": {
+            "type": "string",
+            "example": "Cachorro"
+          },
+          "raca": {
+            "type": "string",
+            "example": "Labrador"
+          },
+          "sexo": {
+            "type": "string",
+            "enum": [
+              "M",
+              "F"
+            ],
+            "example": "M"
+          },
+          "tutor_id": {
+            "type": "integer",
+            "example": 1
+          }
+        }
+      },
+      "Pet": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "example": 1
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/PetInput"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "tutor_nome": {
+                "type": "string",
+                "example": "Maria Silva"
+              }
+            }
+          }
+        ]
+      },
+      "ServicoInput": {
+        "type": "object",
+        "required": [
+          "nome",
+          "preco"
+        ],
+        "properties": {
+          "nome": {
+            "type": "string",
+            "example": "Banho"
+          },
+          "descricao": {
+            "type": "string",
+            "example": "Banho com shampoo neutro, secagem e perfume"
+          },
+          "preco": {
+            "type": "number",
+            "example": 50
+          }
+        }
+      },
+      "Servico": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "example": 1
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/ServicoInput"
+          }
+        ]
+      },
+      "ReajusteInput": {
+        "type": "object",
+        "required": [
+          "percentual"
+        ],
+        "properties": {
+          "percentual": {
+            "type": "number",
+            "example": 10,
+            "description": "Positivo aumenta, negativo dá desconto (entre -90 e 200)"
+          },
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "example": [
+              1,
+              2
+            ],
+            "description": "Serviços a reajustar; vazio = todos"
+          }
+        }
+      },
+      "ProdutoInput": {
+        "type": "object",
+        "required": [
+          "nome",
+          "preco",
+          "estoque"
+        ],
+        "properties": {
+          "nome": {
+            "type": "string",
+            "example": "Ração Premium Cães Adultos 15 kg"
+          },
+          "descricao": {
+            "type": "string",
+            "example": "Ração seca sabor frango e arroz"
+          },
+          "categoria": {
+            "type": "string",
+            "example": "Ração",
+            "description": "Ração, Brinquedos, Medicamentos, Acessórios ou Higiene"
+          },
+          "preco": {
+            "type": "number",
+            "example": 219.9
+          },
+          "estoque": {
+            "type": "integer",
+            "example": 12
+          }
+        }
+      },
+      "Produto": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "example": 1
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/ProdutoInput"
+          }
+        ]
+      },
+      "MovimentoEstoque": {
+        "type": "object",
+        "required": [
+          "quantidade"
+        ],
+        "properties": {
+          "quantidade": {
+            "type": "integer",
+            "example": -1,
+            "description": "Positivo = entrada, negativo = saída"
+          }
+        }
+      },
+      "AgendamentoInput": {
+        "type": "object",
+        "required": [
+          "tutor_id",
+          "pet_id",
+          "servico_id",
+          "data_hora"
+        ],
+        "properties": {
+          "tutor_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "pet_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "servico_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "data_hora": {
+            "type": "string",
+            "example": "2026-11-05T14:30",
+            "description": "Formato AAAA-MM-DDTHH:MM"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Agendado",
+              "Confirmado",
+              "Concluído",
+              "Cancelado"
+            ],
+            "example": "Agendado"
+          },
+          "observacoes": {
+            "type": "string",
+            "example": "Pet tem medo de secador"
+          }
+        }
+      },
+      "Agendamento": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "example": 1
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/AgendamentoInput"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "tutor_nome": {
+                "type": "string",
+                "example": "Maria Silva"
+              },
+              "pet_nome": {
+                "type": "string",
+                "example": "Thor"
+              },
+              "pet_especie": {
+                "type": "string",
+                "example": "Cachorro"
+              },
+              "servico_nome": {
+                "type": "string",
+                "example": "Banho"
+              },
+              "servico_preco": {
+                "type": "number",
+                "example": 55,
+                "description": "Preço atual do serviço"
+              },
+              "valor": {
+                "type": "number",
+                "example": 50,
+                "description": "Preço do serviço quando foi agendado (não muda com reajuste)"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "responses": {
+      "NaoAutenticado": {
+        "description": "Token ausente, inválido ou expirado",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Erro"
+            }
+          }
+        }
+      },
+      "NaoEncontrado": {
+        "description": "Registro não encontrado",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Erro"
+            }
+          }
+        }
+      },
+      "Invalido": {
+        "description": "Dados inválidos ou campos obrigatórios faltando",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Erro"
+            }
+          }
+        }
+      },
+      "EmUso": {
+        "description": "Registro ligado a outros e não pode ser excluído",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Erro"
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/users": {
+      "get": {
+        "summary": "Lista os usuários do sistema (sem as senhas)",
+        "tags": [
+          "Usuários"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de usuários",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "users": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Usuario"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          }
+        }
+      },
+      "post": {
+        "summary": "Cria um usuário",
+        "tags": [
+          "Usuários"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsuarioInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuário criado"
+          },
+          "400": {
+            "$ref": "#/components/responses/Invalido"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "409": {
+            "description": "Login já usado por outro usuário"
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "summary": "Busca um usuário pelo ID",
+        "tags": [
+          "Usuários"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usuário encontrado"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualiza um usuário (envie password só se quiser trocar a senha)",
+        "tags": [
+          "Usuários"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsuarioInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Usuário atualizado"
+          },
+          "400": {
+            "$ref": "#/components/responses/Invalido"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Exclui um usuário (não é possível excluir o próprio)",
+        "tags": [
+          "Usuários"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usuário excluído"
+          },
+          "400": {
+            "description": "Tentativa de excluir o próprio usuário"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          }
+        }
+      }
+    },
+    "/tutores": {
+      "get": {
+        "summary": "Lista os tutores com a quantidade de pets de cada um",
+        "tags": [
+          "Tutores"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de tutores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tutores": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Tutor"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          }
+        }
+      },
+      "post": {
+        "summary": "Cadastra um tutor",
+        "tags": [
+          "Tutores"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TutorInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tutor criado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "tutor": {
+                      "$ref": "#/components/schemas/Tutor"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Invalido"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          }
+        }
+      }
+    },
+    "/tutores/{id}": {
+      "get": {
+        "summary": "Busca um tutor pelo ID",
+        "tags": [
+          "Tutores"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tutor encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tutor": {
+                      "$ref": "#/components/schemas/Tutor"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualiza um tutor",
+        "tags": [
+          "Tutores"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TutorInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tutor atualizado"
+          },
+          "400": {
+            "$ref": "#/components/responses/Invalido"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Exclui um tutor (só se ele não tiver pets nem agendamentos)",
+        "tags": [
+          "Tutores"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tutor excluído"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          },
+          "409": {
+            "$ref": "#/components/responses/EmUso"
+          }
+        }
+      }
+    },
+    "/servicos": {
+      "get": {
+        "summary": "Lista os serviços (banho, tosa, consulta, vacinação...)",
+        "tags": [
+          "Serviços"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de serviços",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "servicos": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Servico"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          }
+        }
+      },
+      "post": {
+        "summary": "Cadastra um serviço",
+        "tags": [
+          "Serviços"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServicoInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Serviço criado"
+          },
+          "400": {
+            "$ref": "#/components/responses/Invalido"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          }
+        }
+      }
+    },
+    "/servicos/reajuste": {
+      "post": {
+        "summary": "Reajusta os preços de uma vez (aumento ou desconto em %)",
+        "description": "Sem \"ids\" o reajuste vale para todos os serviços. Os preços novos são arredondados em centavos.",
+        "tags": [
+          "Serviços"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReajusteInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Preços reajustados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "servicos": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Servico"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Invalido"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          }
+        }
+      }
+    },
+    "/servicos/{id}": {
+      "get": {
+        "summary": "Busca um serviço pelo ID",
+        "tags": [
+          "Serviços"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Serviço encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "servico": {
+                      "$ref": "#/components/schemas/Servico"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualiza um serviço",
+        "tags": [
+          "Serviços"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServicoInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Serviço atualizado"
+          },
+          "400": {
+            "$ref": "#/components/responses/Invalido"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Exclui um serviço (só se não estiver em agendamentos)",
+        "tags": [
+          "Serviços"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Serviço excluído"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          },
+          "409": {
+            "$ref": "#/components/responses/EmUso"
+          }
+        }
+      }
+    },
+    "/produtos": {
+      "get": {
+        "summary": "Lista os produtos (ração, brinquedos, medicamentos...)",
+        "tags": [
+          "Produtos"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "categoria",
+            "required": false,
+            "description": "Filtra por categoria",
+            "schema": {
+              "type": "string",
+              "example": "Ração"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de produtos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "produtos": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Produto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          }
+        }
+      },
+      "post": {
+        "summary": "Cadastra um produto",
+        "tags": [
+          "Produtos"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProdutoInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Produto criado"
+          },
+          "400": {
+            "$ref": "#/components/responses/Invalido"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          }
+        }
+      }
+    },
+    "/produtos/{id}": {
+      "get": {
+        "summary": "Busca um produto pelo ID",
+        "tags": [
+          "Produtos"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Produto encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "produto": {
+                      "$ref": "#/components/schemas/Produto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualiza um produto",
+        "tags": [
+          "Produtos"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProdutoInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Produto atualizado"
+          },
+          "400": {
+            "$ref": "#/components/responses/Invalido"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Exclui um produto",
+        "tags": [
+          "Produtos"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Produto excluído"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          }
+        }
+      }
+    },
+    "/produtos/{id}/estoque": {
+      "post": {
+        "summary": "Dá entrada (quantidade positiva) ou saída (negativa) no estoque",
+        "description": "A conta é feita no banco, então duas saídas ao mesmo tempo não deixam o estoque negativo.",
+        "tags": [
+          "Produtos"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovimentoEstoque"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Estoque atualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "produto": {
+                      "$ref": "#/components/schemas/Produto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Quantidade inválida ou estoque insuficiente"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          }
+        }
+      }
+    },
+    "/pets": {
+      "get": {
+        "summary": "Lista os pets com o nome do tutor",
+        "tags": [
+          "Pets"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "tutor_id",
+            "required": false,
+            "description": "Filtra os pets de um tutor",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de pets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pets": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Pet"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          }
+        }
+      },
+      "post": {
+        "summary": "Cadastra um pet ligado a um tutor",
+        "tags": [
+          "Pets"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PetInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pet criado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "pet": {
+                      "$ref": "#/components/schemas/Pet"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Invalido"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          }
+        }
+      }
+    },
+    "/pets/{id}": {
+      "get": {
+        "summary": "Busca um pet pelo ID",
+        "tags": [
+          "Pets"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pet encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pet": {
+                      "$ref": "#/components/schemas/Pet"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualiza um pet",
+        "tags": [
+          "Pets"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PetInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pet atualizado"
+          },
+          "400": {
+            "$ref": "#/components/responses/Invalido"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Exclui um pet (só se ele não tiver agendamentos)",
+        "tags": [
+          "Pets"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pet excluído"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          },
+          "409": {
+            "$ref": "#/components/responses/EmUso"
+          }
+        }
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "summary": "Resumo do painel inicial (totais, próximos agendamentos, estoque baixo, agendamentos por status, faturamento do mês)",
+        "tags": [
+          "Dashboard"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "hoje",
+            "required": false,
+            "description": "Data de hoje no fuso do usuário (AAAA-MM-DD)",
+            "schema": {
+              "type": "string",
+              "example": "2026-10-29"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumo do petshop"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          }
+        }
+      }
+    },
+    "/auth/config": {
+      "get": {
+        "summary": "Diz se o \"Criar conta\" está ligado (rota pública)",
+        "tags": [
+          "Auth"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Configuração da tela de login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cadastroPublico": {
+                      "type": "boolean",
+                      "example": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "summary": "Cria uma conta de usuário (rota pública)",
+        "description": "Só funciona com CADASTRO_PUBLICO=sim no back/.env (vem desligado).",
+        "tags": [
+          "Auth"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsuarioInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuário criado com sucesso"
+          },
+          "400": {
+            "$ref": "#/components/responses/Invalido"
+          },
+          "403": {
+            "description": "Cadastro público desligado"
+          },
+          "409": {
+            "description": "Usuário já existe"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Faz login e devolve o token JWT (rota pública)",
+        "tags": [
+          "Auth"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credenciais"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login bem-sucedido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Login bem-sucedido"
+                    },
+                    "token": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/Usuario"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuário ou senha inválidos"
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Dados do usuário dono do token",
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "Usuário logado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/Usuario"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          }
+        }
+      }
+    },
+    "/agendamentos": {
+      "get": {
+        "summary": "Lista os agendamentos com nomes de tutor, pet e serviço",
+        "tags": [
+          "Agendamentos"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Agendado",
+                "Confirmado",
+                "Concluído",
+                "Cancelado"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "data",
+            "required": false,
+            "description": "Dia no formato AAAA-MM-DD",
+            "schema": {
+              "type": "string",
+              "example": "2026-11-05"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pet",
+            "required": false,
+            "description": "ID do pet, para ver o histórico de atendimentos dele",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tutor",
+            "required": false,
+            "description": "ID do tutor, para ver os agendamentos de todos os pets dele",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de agendamentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "agendamentos": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Agendamento"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          }
+        }
+      },
+      "post": {
+        "summary": "Cria um agendamento (o pet precisa ser do tutor informado)",
+        "tags": [
+          "Agendamentos"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgendamentoInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Agendamento criado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "agendamento": {
+                      "$ref": "#/components/schemas/Agendamento"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Invalido"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "409": {
+            "description": "Esse pet já tem um agendamento nesse horário"
+          }
+        }
+      }
+    },
+    "/agendamentos/{id}": {
+      "get": {
+        "summary": "Busca um agendamento pelo ID",
+        "tags": [
+          "Agendamentos"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Agendamento encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "agendamento": {
+                      "$ref": "#/components/schemas/Agendamento"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualiza um agendamento (inclusive o status)",
+        "tags": [
+          "Agendamentos"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgendamentoInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Agendamento atualizado"
+          },
+          "400": {
+            "$ref": "#/components/responses/Invalido"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          },
+          "409": {
+            "description": "Esse pet já tem um agendamento nesse horário"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Exclui um agendamento",
+        "tags": [
+          "Agendamentos"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Agendamento excluído"
+          },
+          "401": {
+            "$ref": "#/components/responses/NaoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NaoEncontrado"
+          }
+        }
+      }
+    }
+  }
+}

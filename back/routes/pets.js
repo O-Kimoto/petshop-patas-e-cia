@@ -1,127 +1,84 @@
+// Pets (cada pet pertence a um tutor): /api/pets
 const express = require('express')
-const authenticateToken = require('../middleware/auth')
-const { asyncHandler } = require('../controllers/helpers')
-const controller = require('../controllers/petController')
+const db = require('../db/database')
+
 const router = express.Router()
 
-// Todas as rotas de pets exigem token JWT - [Otávio Michels]
-router.use(authenticateToken)
+// Consulta base: os campos do pet e o nome do tutor dele (JOIN pets.tutor_id -> tutores.id)
+const SELECT_PET = 'SELECT p.*, t.nome AS tutor_nome FROM pets p JOIN tutores t ON t.id = p.tutor_id'
 
-/**
- * @swagger
- * /pets:
- *   get:
- *     summary: Lista os pets com o nome do tutor
- *     tags: [Pets]
- *     parameters:
- *       - in: query
- *         name: tutor_id
- *         required: false
- *         description: Filtra os pets de um tutor
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Lista de pets
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 pets:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Pet'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *   post:
- *     summary: Cadastra um pet ligado a um tutor
- *     tags: [Pets]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/PetInput'
- *     responses:
- *       201:
- *         description: Pet criado
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 pet:
- *                   $ref: '#/components/schemas/Pet'
- *       400:
- *         $ref: '#/components/responses/Invalido'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- */
-router.get('/', asyncHandler(controller.listar))
-router.post('/', asyncHandler(controller.criar))
+// Confere os dados do formulário. Devolve a mensagem de erro, ou null se estiver tudo certo.
+async function validar(pet) {
+    if (!pet.nome || !pet.especie || !pet.sexo || !pet.tutor_id) return 'Nome, espécie, sexo e tutor são obrigatórios'
+    if (!['M', 'F'].includes(String(pet.sexo).toUpperCase())) return 'Sexo deve ser M (macho) ou F (fêmea)'
+    if (!(await db.get('SELECT id FROM tutores WHERE id = ?', [pet.tutor_id]))) return 'Tutor informado não existe'
+    return null
+}
 
-/**
- * @swagger
- * /pets/{id}:
- *   get:
- *     summary: Busca um pet pelo ID
- *     tags: [Pets]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     responses:
- *       200:
- *         description: Pet encontrado
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 pet:
- *                   $ref: '#/components/schemas/Pet'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- *   put:
- *     summary: Atualiza um pet
- *     tags: [Pets]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/PetInput'
- *     responses:
- *       200:
- *         description: Pet atualizado
- *       400:
- *         $ref: '#/components/responses/Invalido'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- *   delete:
- *     summary: Exclui um pet (só se ele não tiver agendamentos)
- *     tags: [Pets]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     responses:
- *       200:
- *         description: Pet excluído
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- *       409:
- *         $ref: '#/components/responses/EmUso'
- */
-router.get('/:id', asyncHandler(controller.buscar))
-router.put('/:id', asyncHandler(controller.atualizar))
-router.delete('/:id', asyncHandler(controller.remover))
+// GET /api/pets: lista todos, ou só os de um tutor com ?tutor_id=1
+router.get('/', async (req, res) => {
+    let pets
+    if (req.query.tutor_id) {
+        pets = await db.all(`${SELECT_PET} WHERE p.tutor_id = ? ORDER BY p.nome`, [req.query.tutor_id])
+    } else {
+        pets = await db.all(`${SELECT_PET} ORDER BY p.nome`)
+    }
+    res.json({ pets })
+})
+
+// GET /api/pets/1: um pet
+router.get('/:id', async (req, res) => {
+    const pet = await db.get(`${SELECT_PET} WHERE p.id = ?`, [req.params.id])
+    if (!pet) {
+        return res.status(404).json({ message: 'Pet não encontrado' })
+    }
+    res.json({ pet })
+})
+
+// POST /api/pets: cadastra
+router.post('/', async (req, res) => {
+    const erro = await validar(req.body)
+    if (erro) {
+        return res.status(400).json({ message: erro })
+    }
+
+    const { nome, especie, raca, sexo, tutor_id } = req.body
+    const { id } = await db.run('INSERT INTO pets (nome, especie, raca, sexo, tutor_id) VALUES (?, ?, ?, ?, ?)',
+        [nome, especie, raca || null, sexo.toUpperCase(), tutor_id])
+    const pet = await db.get(`${SELECT_PET} WHERE p.id = ?`, [id])
+    res.status(201).json({ message: 'Pet criado com sucesso', pet })
+})
+
+// PUT /api/pets/1: edita
+router.put('/:id', async (req, res) => {
+    const id = req.params.id
+    if (!(await db.get('SELECT id FROM pets WHERE id = ?', [id]))) {
+        return res.status(404).json({ message: 'Pet não encontrado' })
+    }
+    const erro = await validar(req.body)
+    if (erro) {
+        return res.status(400).json({ message: erro })
+    }
+
+    const { nome, especie, raca, sexo, tutor_id } = req.body
+    await db.run('UPDATE pets SET nome = ?, especie = ?, raca = ?, sexo = ?, tutor_id = ? WHERE id = ?',
+        [nome, especie, raca || null, sexo.toUpperCase(), tutor_id, id])
+    const pet = await db.get(`${SELECT_PET} WHERE p.id = ?`, [id])
+    res.json({ message: 'Pet atualizado com sucesso', pet })
+})
+
+// DELETE /api/pets/1: exclui, se o pet não tiver agendamentos
+router.delete('/:id', async (req, res) => {
+    const id = req.params.id
+    if (!(await db.get('SELECT id FROM pets WHERE id = ?', [id]))) {
+        return res.status(404).json({ message: 'Pet não encontrado' })
+    }
+    if (await db.get('SELECT id FROM agendamentos WHERE pet_id = ?', [id])) {
+        return res.status(409).json({ message: 'Este pet tem agendamentos. Exclua os agendamentos antes de excluir o pet.' })
+    }
+
+    await db.run('DELETE FROM pets WHERE id = ?', [id])
+    res.json({ message: 'Pet excluído com sucesso' })
+})
 
 module.exports = router

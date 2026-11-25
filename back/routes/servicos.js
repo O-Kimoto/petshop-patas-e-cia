@@ -1,145 +1,107 @@
+// Serviços do petshop (banho, tosa, consulta...): /api/servicos
 const express = require('express')
-const authenticateToken = require('../middleware/auth')
-const { asyncHandler } = require('../controllers/helpers')
-const controller = require('../controllers/servicoController')
+const db = require('../db/database')
+
 const router = express.Router()
 
-// Todas as rotas de serviços exigem token JWT - [Otávio Michels]
-router.use(authenticateToken)
+// Confere os dados do formulário. Devolve a mensagem de erro, ou null se estiver tudo certo.
+function validar(servico) {
+    if (!servico.nome) return 'Nome é obrigatório'
+    // preço vazio ou que não é número (ou é negativo) não serve
+    if (servico.preco === null || servico.preco === '' || !(Number(servico.preco) >= 0)) {
+        return 'Preço deve ser um número maior ou igual a zero'
+    }
+    return null
+}
 
-/**
- * @swagger
- * /servicos:
- *   get:
- *     summary: Lista os serviços (banho, tosa, consulta, vacinação...)
- *     tags: [Serviços]
- *     responses:
- *       200:
- *         description: Lista de serviços
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 servicos:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Servico'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *   post:
- *     summary: Cadastra um serviço
- *     tags: [Serviços]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/ServicoInput'
- *     responses:
- *       201:
- *         description: Serviço criado
- *       400:
- *         $ref: '#/components/responses/Invalido'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- */
-router.get('/', asyncHandler(controller.listar))
-router.post('/', asyncHandler(controller.criar))
+// GET /api/servicos: lista
+router.get('/', async (req, res) => {
+    const servicos = await db.all('SELECT * FROM servicos ORDER BY nome')
+    res.json({ servicos })
+})
 
-/**
- * @swagger
- * /servicos/reajuste:
- *   post:
- *     summary: Reajusta os preços de uma vez (aumento ou desconto em %)
- *     description: Sem "ids" o reajuste vale para todos os serviços. Os preços novos são arredondados em centavos.
- *     tags: [Serviços]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/ReajusteInput'
- *     responses:
- *       200:
- *         description: Preços reajustados
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 servicos:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Servico'
- *       400:
- *         $ref: '#/components/responses/Invalido'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- */
-router.post('/reajuste', asyncHandler(controller.reajustar))
+// GET /api/servicos/1: um serviço
+router.get('/:id', async (req, res) => {
+    const servico = await db.get('SELECT * FROM servicos WHERE id = ?', [req.params.id])
+    if (!servico) {
+        return res.status(404).json({ message: 'Serviço não encontrado' })
+    }
+    res.json({ servico })
+})
 
-/**
- * @swagger
- * /servicos/{id}:
- *   get:
- *     summary: Busca um serviço pelo ID
- *     tags: [Serviços]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     responses:
- *       200:
- *         description: Serviço encontrado
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 servico:
- *                   $ref: '#/components/schemas/Servico'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- *   put:
- *     summary: Atualiza um serviço
- *     tags: [Serviços]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/ServicoInput'
- *     responses:
- *       200:
- *         description: Serviço atualizado
- *       400:
- *         $ref: '#/components/responses/Invalido'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- *   delete:
- *     summary: Exclui um serviço (só se não estiver em agendamentos)
- *     tags: [Serviços]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     responses:
- *       200:
- *         description: Serviço excluído
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- *       409:
- *         $ref: '#/components/responses/EmUso'
- */
-router.get('/:id', asyncHandler(controller.buscar))
-router.put('/:id', asyncHandler(controller.atualizar))
-router.delete('/:id', asyncHandler(controller.remover))
+// POST /api/servicos: cadastra
+router.post('/', async (req, res) => {
+    const erro = validar(req.body)
+    if (erro) {
+        return res.status(400).json({ message: erro })
+    }
+
+    const { nome, descricao, preco } = req.body
+    const { id } = await db.run('INSERT INTO servicos (nome, descricao, preco) VALUES (?, ?, ?)',
+        [nome, descricao || null, Number(preco)])
+    const servico = await db.get('SELECT * FROM servicos WHERE id = ?', [id])
+    res.status(201).json({ message: 'Serviço criado com sucesso', servico })
+})
+
+// POST /api/servicos/reajuste: muda o preço em % (positivo aumenta, negativo dá desconto)
+// Corpo: { "percentual": 10, "ids": [1, 2] }. Sem ids (ou lista vazia), vale para todos os serviços.
+router.post('/reajuste', async (req, res) => {
+    const percentual = Number(req.body.percentual)
+    if (!percentual || percentual < -90 || percentual > 200) {
+        return res.status(400).json({ message: 'Percentual deve ser um número diferente de zero, entre -90 e 200' })
+    }
+    const ids = req.body.ids || []
+    if (!Array.isArray(ids) || !ids.every(Number.isInteger)) {
+        return res.status(400).json({ message: 'ids deve ser uma lista de IDs de serviço' })
+    }
+
+    const fator = 1 + percentual / 100 // +10% => multiplica por 1.10
+    let resultado
+    if (ids.length > 0) {
+        const marcadores = ids.map(() => '?').join(', ') // um "?" para cada id: "?, ?"
+        resultado = await db.run(`UPDATE servicos SET preco = ROUND(preco * ?, 2) WHERE id IN (${marcadores})`, [fator, ...ids])
+    } else {
+        resultado = await db.run('UPDATE servicos SET preco = ROUND(preco * ?, 2)', [fator])
+    }
+
+    if (resultado.changes === 0) {
+        return res.status(404).json({ message: 'Nenhum serviço encontrado para reajustar' })
+    }
+    const servicos = await db.all('SELECT * FROM servicos ORDER BY nome')
+    const sinal = percentual > 0 ? '+' : ''
+    res.json({ message: `Preço de ${resultado.changes} serviço(s) reajustado em ${sinal}${percentual}%`, servicos })
+})
+
+// PUT /api/servicos/1: edita
+router.put('/:id', async (req, res) => {
+    const id = req.params.id
+    if (!(await db.get('SELECT id FROM servicos WHERE id = ?', [id]))) {
+        return res.status(404).json({ message: 'Serviço não encontrado' })
+    }
+    const erro = validar(req.body)
+    if (erro) {
+        return res.status(400).json({ message: erro })
+    }
+
+    const { nome, descricao, preco } = req.body
+    await db.run('UPDATE servicos SET nome = ?, descricao = ?, preco = ? WHERE id = ?',
+        [nome, descricao || null, Number(preco), id])
+    const servico = await db.get('SELECT * FROM servicos WHERE id = ?', [id])
+    res.json({ message: 'Serviço atualizado com sucesso', servico })
+})
+
+// DELETE /api/servicos/1: exclui, se o serviço não estiver em nenhum agendamento
+router.delete('/:id', async (req, res) => {
+    const id = req.params.id
+    if (!(await db.get('SELECT id FROM servicos WHERE id = ?', [id]))) {
+        return res.status(404).json({ message: 'Serviço não encontrado' })
+    }
+    if (await db.get('SELECT id FROM agendamentos WHERE servico_id = ?', [id])) {
+        return res.status(409).json({ message: 'Este serviço é usado em agendamentos e não pode ser excluído.' })
+    }
+
+    await db.run('DELETE FROM servicos WHERE id = ?', [id])
+    res.json({ message: 'Serviço excluído com sucesso' })
+})
 
 module.exports = router

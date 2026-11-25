@@ -1,153 +1,102 @@
+// Produtos à venda, com estoque: /api/produtos
 const express = require('express')
-const authenticateToken = require('../middleware/auth')
-const { asyncHandler } = require('../controllers/helpers')
-const controller = require('../controllers/produtoController')
+const db = require('../db/database')
+
 const router = express.Router()
 
-// Todas as rotas de produtos exigem token JWT - [Otávio Michels]
-router.use(authenticateToken)
+// Confere os dados do formulário. Devolve a mensagem de erro, ou null se estiver tudo certo.
+function validar(produto) {
+    if (!produto.nome) return 'Nome é obrigatório'
+    if (produto.preco === null || produto.preco === '' || !(Number(produto.preco) >= 0)) {
+        return 'Preço deve ser um número maior ou igual a zero'
+    }
+    const estoque = Number(produto.estoque)
+    if (produto.estoque === null || produto.estoque === '' || !Number.isInteger(estoque) || estoque < 0) {
+        return 'Estoque deve ser um número inteiro maior ou igual a zero'
+    }
+    return null
+}
 
-/**
- * @swagger
- * /produtos:
- *   get:
- *     summary: Lista os produtos (ração, brinquedos, medicamentos...)
- *     tags: [Produtos]
- *     parameters:
- *       - in: query
- *         name: categoria
- *         required: false
- *         description: Filtra por categoria
- *         schema:
- *           type: string
- *           example: Ração
- *     responses:
- *       200:
- *         description: Lista de produtos
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 produtos:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Produto'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *   post:
- *     summary: Cadastra um produto
- *     tags: [Produtos]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/ProdutoInput'
- *     responses:
- *       201:
- *         description: Produto criado
- *       400:
- *         $ref: '#/components/responses/Invalido'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- */
-router.get('/', asyncHandler(controller.listar))
-router.post('/', asyncHandler(controller.criar))
+// GET /api/produtos: lista todos, ou só uma categoria com ?categoria=Ração
+router.get('/', async (req, res) => {
+    let produtos
+    if (req.query.categoria) {
+        produtos = await db.all('SELECT * FROM produtos WHERE categoria = ? ORDER BY nome', [req.query.categoria])
+    } else {
+        produtos = await db.all('SELECT * FROM produtos ORDER BY nome')
+    }
+    res.json({ produtos })
+})
 
-/**
- * @swagger
- * /produtos/{id}:
- *   get:
- *     summary: Busca um produto pelo ID
- *     tags: [Produtos]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     responses:
- *       200:
- *         description: Produto encontrado
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 produto:
- *                   $ref: '#/components/schemas/Produto'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- *   put:
- *     summary: Atualiza um produto
- *     tags: [Produtos]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/ProdutoInput'
- *     responses:
- *       200:
- *         description: Produto atualizado
- *       400:
- *         $ref: '#/components/responses/Invalido'
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- *   delete:
- *     summary: Exclui um produto
- *     tags: [Produtos]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     responses:
- *       200:
- *         description: Produto excluído
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- */
-router.get('/:id', asyncHandler(controller.buscar))
-router.put('/:id', asyncHandler(controller.atualizar))
-router.delete('/:id', asyncHandler(controller.remover))
+// GET /api/produtos/1: um produto
+router.get('/:id', async (req, res) => {
+    const produto = await db.get('SELECT * FROM produtos WHERE id = ?', [req.params.id])
+    if (!produto) {
+        return res.status(404).json({ message: 'Produto não encontrado' })
+    }
+    res.json({ produto })
+})
 
-/**
- * @swagger
- * /produtos/{id}/estoque:
- *   post:
- *     summary: Dá entrada (quantidade positiva) ou saída (negativa) no estoque
- *     description: A conta é feita no banco, então duas saídas ao mesmo tempo não deixam o estoque negativo.
- *     tags: [Produtos]
- *     parameters:
- *       - $ref: '#/components/parameters/IdPath'
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/MovimentoEstoque'
- *     responses:
- *       200:
- *         description: Estoque atualizado
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 produto:
- *                   $ref: '#/components/schemas/Produto'
- *       400:
- *         description: Quantidade inválida ou estoque insuficiente
- *       401:
- *         $ref: '#/components/responses/NaoAutenticado'
- *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
- */
-router.post('/:id/estoque', asyncHandler(controller.movimentarEstoque))
+// POST /api/produtos: cadastra
+router.post('/', async (req, res) => {
+    const erro = validar(req.body)
+    if (erro) {
+        return res.status(400).json({ message: erro })
+    }
+
+    const { nome, descricao, categoria, preco, estoque } = req.body
+    const { id } = await db.run('INSERT INTO produtos (nome, descricao, categoria, preco, estoque) VALUES (?, ?, ?, ?, ?)',
+        [nome, descricao || null, categoria || null, Number(preco), Number(estoque)])
+    const produto = await db.get('SELECT * FROM produtos WHERE id = ?', [id])
+    res.status(201).json({ message: 'Produto criado com sucesso', produto })
+})
+
+// PUT /api/produtos/1: edita
+router.put('/:id', async (req, res) => {
+    const id = req.params.id
+    if (!(await db.get('SELECT id FROM produtos WHERE id = ?', [id]))) {
+        return res.status(404).json({ message: 'Produto não encontrado' })
+    }
+    const erro = validar(req.body)
+    if (erro) {
+        return res.status(400).json({ message: erro })
+    }
+
+    const { nome, descricao, categoria, preco, estoque } = req.body
+    await db.run('UPDATE produtos SET nome = ?, descricao = ?, categoria = ?, preco = ?, estoque = ? WHERE id = ?',
+        [nome, descricao || null, categoria || null, Number(preco), Number(estoque), id])
+    const produto = await db.get('SELECT * FROM produtos WHERE id = ?', [id])
+    res.json({ message: 'Produto atualizado com sucesso', produto })
+})
+
+// POST /api/produtos/1/estoque: entrada (+) ou saída (-) de estoque. Corpo: { "quantidade": -1 }
+router.post('/:id/estoque', async (req, res) => {
+    const quantidade = Number(req.body.quantidade)
+    if (!Number.isInteger(quantidade) || quantidade === 0) {
+        return res.status(400).json({ message: 'Quantidade deve ser um número inteiro diferente de zero' })
+    }
+
+    const produto = await db.get('SELECT * FROM produtos WHERE id = ?', [req.params.id])
+    if (!produto) {
+        return res.status(404).json({ message: 'Produto não encontrado' })
+    }
+    if (produto.estoque + quantidade < 0) {
+        return res.status(400).json({ message: `Estoque insuficiente: ${produto.nome} tem ${produto.estoque} un.` })
+    }
+
+    await db.run('UPDATE produtos SET estoque = estoque + ? WHERE id = ?', [quantidade, produto.id])
+    const atualizado = await db.get('SELECT * FROM produtos WHERE id = ?', [produto.id])
+    const tipo = quantidade > 0 ? 'Entrada' : 'Saída'
+    res.json({ message: `${tipo} de ${Math.abs(quantidade)} un. registrada`, produto: atualizado })
+})
+
+// DELETE /api/produtos/1: exclui
+router.delete('/:id', async (req, res) => {
+    const { changes } = await db.run('DELETE FROM produtos WHERE id = ?', [req.params.id])
+    if (changes === 0) {
+        return res.status(404).json({ message: 'Produto não encontrado' })
+    }
+    res.json({ message: 'Produto excluído com sucesso' })
+})
 
 module.exports = router
