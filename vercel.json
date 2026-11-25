@@ -7,7 +7,7 @@
     "regions": ["gru1"],
     "functions": {
         "api/index.js": {
-            "includeFiles": "back/routes/**",
+            "includeFiles": "back/node_modules/swagger-ui-dist/*.{css,js,png}",
             "maxDuration": 30
         }
     },
